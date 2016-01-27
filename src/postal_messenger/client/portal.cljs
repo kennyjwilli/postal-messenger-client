@@ -13,6 +13,7 @@
                       [instream outbus] (pc/socket client :messages {:token (misc/get-jwt)})]
                   (s/on-value instream (fn [message]
                                          (println "MESSAGE" message)))
+                  (s/on-end instream #(.info js/console "Message websocket closed"))
                   (do! message-bus #(assoc % :messages-bus outbus))
                   state))})
 
