@@ -39,6 +39,7 @@
            (serve :dir "target/")
            (watch)
            (cljs-repl)
+           (checkout :dependencies [['pusher "0.1.0-SNAPSHOT"]])
            (speak)
            (reload)
            (sass :sass-file "main.scss"

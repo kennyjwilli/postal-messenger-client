@@ -13,7 +13,7 @@
 
 (defn jwt-headers
   []
-  {"Token" (get-jwt)})
+  {"Authorization" (str "Token " (get-jwt))})
 
 (defn get-url
   []
