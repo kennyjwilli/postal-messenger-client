@@ -6,7 +6,10 @@
             [postal-messenger.client.util.misc :as misc]))
 
 (def initial-state
-  {:input-value ""})
+  {:input-value ""
+   :messages    [{:data "first"
+                  :type :sent} {:data "second"
+                                :type :received}]})
 
 (defn render-fn
   [message-bus state]
