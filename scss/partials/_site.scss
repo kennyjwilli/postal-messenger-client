@@ -1,0 +1,11 @@
+@import "flex-layout";
+
+.message {
+  @extend .horizontal.layout;
+  &.received {
+    @extend .start-justified.layout;
+  }
+  &.sent {
+    @extend .end-justified.layout;
+  }
+}
