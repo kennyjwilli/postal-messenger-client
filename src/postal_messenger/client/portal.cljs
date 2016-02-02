@@ -10,17 +10,17 @@
 
 (defn- message-handler
   [msg message-bus]
-  (println msg)
-  (when (= (:dest msg) :client)
+  (println (type msg) msg)
+  (when (= (:dest msg) "client")
     (condp = (:type msg)
-      :add-message (do! message-bus (fn [s] (update s :messages #(conj % (:message msg))))))))
+      "add-message" (do! message-bus (fn [s] (update s :messages #(conj % (:message msg))))))))
 
 (defn- connect-pusher
   [channel api-key message-bus]
   (let [pusher (pusher/pusher api-key {:authEndpoint "/api/pusher-auth"
                                        :auth         {:headers (misc/jwt-headers)}})
         channel (pusher/channel pusher channel)
-        pusher-bus (pusher/subscribe channel "messages" {:parse-fn reader/read-string})
+        pusher-bus (pusher/subscribe channel "messages" {:parse-fn (fn [msg] (js->clj (.parse js/JSON msg) :keywordize-keys true))})
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
     (s/on-value pusher-bus #(message-handler % message-bus))))
 
@@ -38,7 +38,7 @@
             [:div {:style {:width "300px"}}
              [:div.layout.vertical
               (map (fn [msg]
-                     [:div {:class (str (-> msg :type name) " message")}
+                     [:div {:class (str (:type msg) " message")}
                       [:span (:data msg)]]) messages)]
              [:div.layout.horizontal
               [:input.flex {:type      "text"

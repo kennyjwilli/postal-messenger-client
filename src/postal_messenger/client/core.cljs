@@ -8,8 +8,9 @@
 (def initial-state
   {:input-value ""
    :messages    [{:data "first"
-                  :type :sent} {:data "second"
-                                :type :received}]})
+                  :type "sent"}
+                 {:data "second"
+                  :type "received"}]})
 
 (defn render-fn
   [message-bus state]
