@@ -7,6 +7,7 @@
 
 (def initial-state
   {:input-value ""
+   :socket_id   ""
    :messages    [{:data "first"
                   :type "sent"}
                  {:data "second"
