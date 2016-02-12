@@ -2,7 +2,11 @@
   (:require [clojure.string :as str]
             [cljs-time.core :as t]
             [cljs-time.format :as ft]
-            [postal-messenger.client.util.cookie :as cookie]))
+            [postal-messenger.client.util.cookie :as cookie])
+  (:import
+    goog.date.Date
+    goog.date.DateTime
+    goog.date.UtcDateTime))
 
 (def jwt-cookie-name "POSTAL_JWT")
 
@@ -40,9 +44,25 @@
   [msg]
   (:data msg))
 
+(defn today-at
+  ([hours minutes seconds millis]
+   (let [midnight (doto (goog.date.Date.) (.setTime (t/*ms-fn*)))]
+     (doto (goog.date.DateTime. 0)
+       (.setYear (.getYear midnight))
+       (.setMonth (.getMonth midnight))
+       (.setDate (.getDate midnight))
+       (.setHours hours)
+       (.setMinutes minutes)
+       (.setSeconds seconds)
+       (.setMilliseconds millis))))
+  ([hours minutes seconds]
+   (today-at hours minutes seconds 0))
+  ([hours minutes]
+   (today-at hours minutes 0)))
+
 (defn within-today?
   [date]
-  (t/within? (t/today-at 0 0) (t/today-at 24 59 59 999) date))
+  (t/within? (today-at 0 0) (today-at 23 59 59 999) date))
 
 (defn format-time
   [time]
