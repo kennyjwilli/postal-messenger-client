@@ -1,5 +1,7 @@
 (ns postal-messenger.client.util.misc
   (:require [clojure.string :as str]
+            [cljs-time.core :as t]
+            [cljs-time.format :as ft]
             [postal-messenger.client.util.cookie :as cookie]))
 
 (def jwt-cookie-name "POSTAL_JWT")
@@ -37,3 +39,11 @@
   "Returns a text form of the message"
   [msg]
   (:data msg))
+
+(defn within-today?
+  [date]
+  (t/within? (t/today-at 0 0) (t/today-at 24 59 59 999) date))
+
+(defn format-time
+  [time]
+  )
