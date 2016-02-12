@@ -60,9 +60,21 @@ main {
   width: 100%;
 }
 
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
 .one-line-text {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: block;
+}
+
+.pointer {
+  cursor: pointer;
 }
