@@ -1,0 +1,41 @@
+@import "base";
+
+.material {
+  @include shadow-transition;
+  &[elevation="0"] {
+    @include shadow-none;
+  }
+  @include shadow-elevation-2dp;
+  /*&[elevation="1"] {
+    @include shadow-elevation-2dp;
+  }*/
+  &[elevation="2"] {
+    @include shadow-elevation-4dp;
+  }
+  &[elevation="3"] {
+    @include shadow-elevation-6dp;
+  }
+  &[elevation="4"] {
+    @include shadow-elevation-8dp;
+  }
+  &[elevation="5"] {
+    @include shadow-elevation-16dp;
+  }
+}
+
+.card {
+  @extend .material;
+  background: #fff;
+  & > .card-actions {
+    border-top: 1px solid #e8e8e8;
+    padding: 5px 16px;
+  }
+  & > .content {
+    padding: 16px;
+  }
+  & > .header {
+    border-bottom: 1px solid #e8e8e8;
+    padding: 16px;
+    margin-bottom: 0;
+  }
+}

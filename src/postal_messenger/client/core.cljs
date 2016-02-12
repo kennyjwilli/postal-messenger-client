@@ -2,7 +2,8 @@
   (:require [griebenschmalz.core :as g]
             [rum.core :as rum]
             [cemerick.url :refer [url]]
-            [postal-messenger.client.portal :refer [root]]
+            #_[postal-messenger.client.portal :refer [root]]
+            [postal-messenger.client.views.core :as view]
             [postal-messenger.client.util.misc :as misc]))
 
 (def initial-state
@@ -15,7 +16,7 @@
 
 (defn render-fn
   [message-bus state]
-  (rum/mount (root message-bus state) (.querySelector js/document "#app")))
+  (rum/mount (view/root message-bus state) (.querySelector js/document "#app")))
 
 (defn ^:export main
   []

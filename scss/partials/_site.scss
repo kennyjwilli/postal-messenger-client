@@ -1,4 +1,44 @@
+@import "base";
+@import "view";
 @import "flex-layout";
+
+html, body {
+  height: 100%;
+}
+
+main {
+  padding-left: $main-spacing;
+  padding-right: $main-spacing;
+}
+
+.avatar {
+  display: inline-block;
+  @include rounded-image(35px);
+}
+
+.conv-container {
+  @extend .card;
+  min-height: 400px;
+  max-width: 950px;
+  width: 100%;
+  position: relative;
+
+  .conv-list {
+    width: 30%;
+    position: relative;
+    .conv {
+      padding: 10px;
+      .last-message {
+        float: left;
+        width: 100%;
+      }
+    }
+  }
+}
+
+.horz-center {
+  margin: 0 auto;
+}
 
 .message {
   @extend .horizontal.layout;
@@ -8,4 +48,16 @@
   &.sent {
     @extend .end-justified.layout;
   }
+}
+
+.nav-bar {
+  height: 50px;
+  margin-bottom: $main-spacing;
+  width: 100%;
+}
+
+.one-line-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -1,0 +1,14 @@
+@import "shadow";
+
+@mixin rounded-image($size) {
+  margin: 0 auto;
+  height: $size;
+  width: $size;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  -ms-border-radius: 50%;
+  -o-border-radius: 50%;
+  border-radius: 50%;
+  background: center no-repeat;
+  background-size: cover;
+}

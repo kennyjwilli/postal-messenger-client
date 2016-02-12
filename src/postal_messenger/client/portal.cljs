@@ -6,7 +6,8 @@
             [beicon.core :as s]
             [promesa.core :as p]
             [postal-messenger.client.util.http :as http]
-            [postal-messenger.client.util.messaging :as msg]))
+            [postal-messenger.client.util.messaging :as msg]
+            [postal-messenger.client.views.core :as core-view]))
 
 (defn- message-handler
   [msg message-bus]
@@ -36,7 +37,8 @@
 (rum/defc root < subscribe-on-mount
           [message-bus state]
           (let [messages (:messages state)]
-            [:div {:style {:width "300px"}}
+
+            #_[:div {:style {:width "300px"}}
              [:div.layout.vertical
               (map (fn [msg]
                      [:div {:class (str (:type msg) " message")}
