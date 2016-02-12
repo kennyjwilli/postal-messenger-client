@@ -24,13 +24,17 @@ main {
   position: relative;
 
   .conv-list {
-    width: 30%;
-    position: relative;
+    width: 300px;
+    //position: relative;
     .conv {
       padding: 10px;
-      .last-message {
+      .avatar {
         float: left;
-        width: 100%;
+        margin-right: 12px;
+      }
+      .last-message {
+        //float: left;
+        //min-width: 0;
       }
     }
   }
@@ -58,6 +62,7 @@ main {
 
 .one-line-text {
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
 }

@@ -41,12 +41,12 @@
              [:div.layout.horizontal.fit
               [:div {:class "conv-list"}
                [:div {:class "conv"}
-                [:div.layout.horizontal
-                 [:div
-                  [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]]
-                 [:div.flex
-                  [:div.layout.horizontal
-                   [:div.flex {:class "conv-title one-line-text"} "Lindsey Cakebread"]
-                   [:div {:class "last-update"} "10:59"]]
-                  [:span {:class "last-message one-line-text"} "Rude to Dixie! thius asd iaskf dsldkm cnxzcx mdsfsldf sdksdkfsdf"]]]]]
+                [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")
+                                      :float            "left"}}]
+                [:div
+                 [:div.layout.horizontal
+                  [:div.flex {:class "conv-title one-line-text"} "Lindsey Cakebread"]
+                  [:div {:class "last-update"} "10:59 PM"]]
+                 ;;TODO: Figure out stupid text wrapping problem
+                 [:span {:class "last-message one-line-text"} "Rude to Dixie! sdf sdf sdf dsfdfdf egtr gfsdfds sdfsdfsdfdsf"]]]]
               [:div.flex {:style {:background-color "purple"}}]]]]])
