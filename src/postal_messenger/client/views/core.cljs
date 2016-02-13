@@ -14,7 +14,7 @@
            [:div
             [:div.layout.horizontal
              [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:recipients state))]
-             [:div {:class "last-update"} "10:59 PM"]]
+             [:div {:class "last-update"} (misc/format-time (:last-update state))]]
             [:span {:class "last-message one-line-text"} (-> state :messages last misc/msg-text)]]])
 
 (rum/defc root

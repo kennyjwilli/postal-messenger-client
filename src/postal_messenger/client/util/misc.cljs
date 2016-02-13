@@ -60,10 +60,28 @@
   ([hours minutes]
    (today-at hours minutes 0)))
 
+(defn end-of-today
+  []
+  (today-at 23 59 59 999))
+
 (defn within-today?
+  "Returns if the given date is within today"
   [date]
-  (t/within? (today-at 0 0) (today-at 23 59 59 999) date))
+  (t/within? (today-at 0 0) (end-of-today) date))
+
+(defn within-week?
+  "Returns if the given date is within a week from the end of today"
+  [date]
+  (let [end (end-of-today)]
+    (t/within? (t/minus end (t/weeks 1)) end date)))
+
+(def days-of-week-short ["Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"])
 
 (defn format-time
   [time]
-  )
+  (letfn [(parse [fmt] (ft/unparse fmt time))]
+    (cond
+      (within-today? time) (str/upper-case (parse (ft/formatter "h:m a")))
+      (within-week? time) (let [d (js/parseInt (ft/unparse (ft/formatter "e") time))]
+                            (days-of-week-short d))
+      :default (parse (ft/formatter "MM/dd/yyyy")))))
