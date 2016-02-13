@@ -23,10 +23,11 @@
                                           (get-in convs [y :last-update])))) convs))
 
 (defn send-message!
-  [socket_id sender data]
+  [socket_id uuid conv msg]
   (http/post! "/api/message" {:dest      :phone
                               :type      :send-message
+                              :id        uuid
                               :socket_id socket_id
-                              :message   {:type   :sent
-                                          :sender sender
-                                          :data   data}}))
+                              :message   {:type       :sent
+                                          :recipients (:recipients conv)
+                                          :data       msg}}))
