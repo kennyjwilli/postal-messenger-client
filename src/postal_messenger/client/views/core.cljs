@@ -35,8 +35,7 @@
              [:div.layout.horizontal.fit
               [:div {:class "conv-list"}
                (map (fn [[id conv]]
-                      (conversation-item message-bus state id)
-                      #_(g/lensed-component (l/in [:conversations id]) conversation-item message-bus state id))
+                      (conversation-item message-bus state id))
                     (-> state :conversations m/sort-conversations))]
               [:div {:class "flex conv-messages"}
                [:div.fit
