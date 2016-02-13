@@ -22,6 +22,10 @@ main {
   @include rounded-image(35px);
 }
 
+.message-list-container:last-child {
+  margin-bottom: 16px;
+}
+
 .conv-container {
   @extend .card;
   min-height: 400px;
@@ -54,6 +58,42 @@ main {
     //box-shadow: -5px 0 5px -3px rgba(0, 0, 0, 0.14);
     position: relative;
     .message-list-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 49px;
+      overflow: auto;
+      .message-container {
+        @extend .horizontal.layout;
+        $margin-size: 15px;
+        margin-top: 10px;
+        &:last-child {
+          margin-bottom: $margin-size;
+        }
+        &.grouped {
+          margin-top: 5px;
+        }
+        &.received {
+          @extend .start-justified.layout;
+          margin-left: $margin-size;
+          .message {
+            background-color: #009688;
+            color: white;
+          }
+        }
+        &.sent {
+          @extend .end-justified.layout;
+          margin-right: $margin-size;
+          .message {
+            background-color: #424242;
+            color: white;
+          }
+        }
+        .message {
+          padding: 10px;
+        }
+      }
     }
     .new-message-container {
       padding: 10px;
@@ -62,6 +102,7 @@ main {
       right: 0;
       position: absolute;
       border-top: 1px solid rgba(0, 0, 0, 0.14);
+      background-color: white;
 
       span[contenteditable=true] {
         margin-right: 10px;
@@ -81,31 +122,6 @@ main {
 
 .horz-center {
   margin: 0 auto;
-}
-
-.message-container {
-  @extend .horizontal.layout;
-  $margin-size: 15px;
-  margin-top: $margin-size;
-  &.received {
-    @extend .start-justified.layout;
-    margin-left: $margin-size;
-    .message {
-      background-color: #009688;
-      color: white;
-    }
-  }
-  &.sent {
-    @extend .end-justified.layout;
-    margin-right: $margin-size;
-    .message {
-      background-color: #424242;
-      color: white;
-    }
-  }
-  .message {
-    padding: 10px;
-  }
 }
 
 .nav-bar {
