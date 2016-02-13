@@ -20,9 +20,11 @@
               [:span {:class "last-message one-line-text"} (-> conv :messages last misc/msg-text)]]]))
 
 (rum/defc message
-          [message-bus msg]
-          [:div {:class (str (:type msg) " message-container")}
-           [:div {:class "message"} (:data msg)]])
+          [message-bus msg idx state]
+          (let [prev-msg (get-in state [:conversations (:selected-conversation state) :messages (dec idx)])]
+            ;;TODO: Message grouping will need to be more specific when group messagin is added
+            [:div {:class (str (:type msg) " message-container " (when (= (:type msg) (:type prev-msg)) "grouped"))}
+             [:div {:class "message"} (:data msg)]]))
 
 (rum/defc root
           [message-bus state]
@@ -38,18 +40,17 @@
                     (-> state :conversations m/sort-conversations))]
               [:div {:class "flex conv-messages"}
                [:div.fit
-                [:div.layout.vertical
-                 [:div {:class "message-list-container flex"}
-                  (let [messages (get-in state [:conversations (:selected-conversation state) :messages])]
-                    (map (fn [msg]
-                           (message message-bus msg)) messages))]
-                 [:div {:class "new-message-container"}
-                  [:div.layout.vertical.center-justified {:style {:height "100%"}}
-                   [:div.layout.horizontal
-                    [:span {:class           "flex"
-                            :placeholder     "Send a message"
-                            :contentEditable true
-                            :on-input        (fn [e]
-                                               (do! message-bus #(assoc % :input-value (aget e "target" "outerText"))))}]
-                    [:div.layout.vertical.center-justified
-                     [:i {:class "zmdi zmdi-mail-send"}]]]]]]]]]]]])
+                [:div {:class "message-list-container"}
+                 (let [messages (get-in state [:conversations (:selected-conversation state) :messages])]
+                   (map-indexed (fn [idx msg]
+                                  (message message-bus msg idx state)) messages))]
+                [:div {:class "new-message-container"}
+                 [:div.layout.vertical.center-justified {:style {:height "100%"}}
+                  [:div.layout.horizontal
+                   [:span {:class           "flex"
+                           :placeholder     "Send a message"
+                           :contentEditable true
+                           :on-input        (fn [e]
+                                              (do! message-bus #(assoc % :input-value (aget e "target" "outerText"))))}]
+                   [:div.layout.vertical.center-justified
+                    [:i {:class "zmdi zmdi-mail-send"}]]]]]]]]]]])
