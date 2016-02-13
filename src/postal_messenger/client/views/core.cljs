@@ -4,7 +4,12 @@
             [cats.labs.lens :as l]
             [cljs-time.core :as t]
             [postal-messenger.client.util.messaging :as m]
-            [postal-messenger.client.util.misc :as misc]))
+            [postal-messenger.client.util.misc :as misc]
+            [clojure.string :as str]
+            [postal-messenger.client.util.http :as http]
+            [promesa.core :as p]
+            [beicon.core :as s]
+            [pusher.core :as pusher]))
 
 (rum/defc conversation-item
           [message-bus state id]
@@ -26,9 +31,53 @@
             [:div {:class (str (:type msg) " message-container " (when (= (:type msg) (:type prev-msg)) "grouped"))}
              [:div {:class "message"} (:data msg)]]))
 
-(rum/defc root
+(defn- message-handler
+  [msg message-bus]
+  (when (= (:dest msg) "client")
+    (condp = (:type msg)
+      "add-message" (do! message-bus (fn [s] (update s :messages #(conj % (:message msg))))))))
+
+(defn- connect-pusher
+  [channel api-key message-bus]
+  (let [p (pusher/pusher api-key {:authEndpoint "/api/pusher-auth"
+                                  :auth         {:headers (misc/jwt-headers)}})
+        channel (pusher/channel p channel)
+        pusher-bus (pusher/subscribe channel "messages" {:parse-fn http/decode-json})
+        #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
+    (pusher/on-connected p (fn [] (do! message-bus (fn [s] (assoc s :socket_id (pusher/socket-id p))))))
+    (s/on-value pusher-bus #(message-handler % message-bus))))
+
+(def subscribe-on-mount
+  {:did-mount (fn [state]
+                (let [message-bus (-> state :rum/args first)]
+                  (p/then (http/get! "/api/pusher")
+                          (fn [{body :body}]
+                            (connect-pusher (:message-channel body) (:api-key body) message-bus)))
+                  state))})
+
+(defn selected-conv
+  [state]
+  (get-in state [:conversations (:selected-conversation state)]))
+
+(defn send-message!
+  [message-bus state]
+  (when-not (str/blank? (:input-value state))
+    (let [socket_id (:socket_id state)
+          id (str (gensym "msg"))
+          conv (selected-conv state)
+          value (:input-value state)]
+      (do! message-bus (fn [s]
+                         (update-in s [:conversations (:selected-conversation state) :messages]
+                                    (fn [msgs]
+                                      (conj msgs {:type   "sent"
+                                                  :data   value
+                                                  :status "sending"})))))
+      (do! message-bus #(assoc % :input-value ""))
+      (m/send-message! socket_id id conv value))))
+
+(rum/defc root < subscribe-on-mount
           [message-bus state]
-          (let [conv (get-in state [:conversations (:selected-conversation state)])]
+          (let [conv (selected-conv state)]
             [:div.layout.vertical
              [:div.nav-bar {:style {:background-color "green"}}]
              [:main.flex
@@ -56,6 +105,9 @@
                                                 (when (= 13 (aget e "keyCode"))
                                                   (when-not (aget e "shiftKey")
                                                     (.stopPropagation e)
-                                                    (.preventDefault e))))}]
+                                                    (.preventDefault e)
+                                                    (send-message! message-bus state))))}
+                      (:input-value state)]
                      [:div.layout.vertical.center-justified
-                      [:i {:class "zmdi zmdi-mail-send"}]]]]]]]]]]]))
+                      [:i {:class    "zmdi zmdi-mail-send"
+                           :on-click (fn [] (send-message! message-bus state))}]]]]]]]]]]]))
