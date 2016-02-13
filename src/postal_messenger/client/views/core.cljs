@@ -21,8 +21,8 @@
 
 (rum/defc message
           [message-bus msg]
-          [:div {:class (str (:type msg) " message")}
-           (:data msg)])
+          [:div {:class (str (:type msg) " message-container")}
+           [:div {:class "message"} (:data msg)]])
 
 (rum/defc root
           [message-bus state]
