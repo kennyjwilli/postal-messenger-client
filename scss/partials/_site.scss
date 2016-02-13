@@ -28,13 +28,17 @@ main {
   max-width: 950px;
   width: 100%;
   position: relative;
-  background-color: #ecf0f0;
+  $bg-color: #ecf0f0;
+  background-color: $bg-color;
 
   .conv-list {
     width: 300px;
     //position: relative;
     .conv {
       padding: 10px;
+      &.selected {
+        background-color: darken($bg-color, 10%);
+      }
       .avatar {
         float: left;
         margin-right: 12px;

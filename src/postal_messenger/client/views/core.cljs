@@ -9,7 +9,7 @@
 (rum/defc conversation-item
           [message-bus state id]
           (let [conv (get-in state [:conversations id])]
-            [:div {:class    "conv noselect pointer"
+            [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
                    :key      (str "conv" id)
                    :on-click (fn [] (do! message-bus #(assoc % :selected-conversation id)))}
              [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
