@@ -28,28 +28,34 @@
 
 (rum/defc root
           [message-bus state]
-          [:div.layout.vertical
-           [:div.nav-bar {:style {:background-color "green"}}]
-           [:main.flex
-            [:div {:class "horz-center conv-container"}
-             [:div.layout.horizontal.fit
-              [:div {:class "conv-list"}
-               (map (fn [[id conv]]
-                      (conversation-item message-bus state id))
-                    (-> state :conversations m/sort-conversations))]
-              [:div {:class "flex conv-messages"}
-               [:div.fit
-                [:div {:class "message-list-container"}
-                 (let [messages (get-in state [:conversations (:selected-conversation state) :messages])]
-                   (map-indexed (fn [idx msg]
-                                  (message message-bus msg idx state)) messages))]
-                [:div {:class "new-message-container"}
-                 [:div.layout.vertical.center-justified {:style {:height "100%"}}
-                  [:div.layout.horizontal
-                   [:span {:class           "flex"
-                           :placeholder     "Send a message"
-                           :contentEditable true
-                           :on-input        (fn [e]
-                                              (do! message-bus #(assoc % :input-value (aget e "target" "outerText"))))}]
-                   [:div.layout.vertical.center-justified
-                    [:i {:class "zmdi zmdi-mail-send"}]]]]]]]]]]])
+          (let [conv (get-in state [:conversations (:selected-conversation state)])]
+            [:div.layout.vertical
+             [:div.nav-bar {:style {:background-color "green"}}]
+             [:main.flex
+              [:div {:class "horz-center conv-container"}
+               [:div.layout.horizontal.fit
+                [:div {:class "conv-list"}
+                 (map (fn [[id conv]]
+                        (conversation-item message-bus state id))
+                      (-> state :conversations m/sort-conversations))]
+                [:div {:class "flex conv-messages"}
+                 [:div.fit
+                  [:div {:class "message-list-container"}
+                   (let [messages (:messages conv)]
+                     (map-indexed (fn [idx msg]
+                                    (message message-bus msg idx state)) messages))]
+                  [:div {:class "new-message-container"}
+                   [:div.layout.vertical.center-justified {:style {:height "100%"}}
+                    [:div.layout.horizontal
+                     [:span {:class           "flex"
+                             :placeholder     "Send a message"
+                             :contentEditable true
+                             :on-input        (fn [e]
+                                                (do! message-bus #(assoc % :input-value (aget e "target" "outerText"))))
+                             :on-key-down     (fn [e]
+                                                (when (= 13 (aget e "keyCode"))
+                                                  (when-not (aget e "shiftKey")
+                                                    (.stopPropagation e)
+                                                    (.preventDefault e))))}]
+                     [:div.layout.vertical.center-justified
+                      [:i {:class "zmdi zmdi-mail-send"}]]]]]]]]]]]))
