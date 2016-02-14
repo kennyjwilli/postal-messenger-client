@@ -92,15 +92,20 @@ main {
             //  opacity: 0.1;
             //}
             .spinner {
-              position: absolute;
               left: -25px;
+              position: absolute;
             }
           }
         }
         .message-container {
-          padding: 10px;
           max-width: 450px;
+          padding: 10px;
           position: relative;
+          .timestamp {
+            font-size: 10px;
+            margin-top: 1px;
+            opacity: 0.6;
+          }
         }
       }
     }

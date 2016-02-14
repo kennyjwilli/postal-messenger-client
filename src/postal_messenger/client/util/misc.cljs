@@ -89,3 +89,13 @@
       (within-week? time) (let [d (js/parseInt (ft/unparse (ft/formatter "e") time))]
                             (days-of-week-short d))
       :default (parse (ft/formatter "MM/dd/yyyy")))))
+
+(defn format-time-message
+  [time]
+  (letfn [(parse [fmt] (ft/unparse fmt time))
+          (time-format [] (str/upper-case (parse (ft/formatter "h:m a"))))]
+    (cond
+      (within-today? time) (time-format)
+      (within-week? time) (let [d (js/parseInt (ft/unparse (ft/formatter "e") time))]
+                            (str (days-of-week-short d) " " (time-format)))
+      :default (str (parse (ft/formatter "MM/dd/yyyy")) " " (time-format)))))

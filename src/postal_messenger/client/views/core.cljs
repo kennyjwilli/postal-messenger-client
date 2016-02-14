@@ -70,13 +70,14 @@
 (rum/defc message
           [message-bus msg idx state]
           (let [prev-msg (get-in state [:conversations (:selected-conversation state) :messages (dec idx)])]
-            ;;TODO: Message grouping will need to be more specific when group messagin is added
+            ;;TODO: Message grouping will need to be more specific when group messaging is added
             [:div {:class (str (:type msg) " message-row " (when (= (:type msg) (:type prev-msg)) "grouped"))}
              [:div {:class "message-container"}
               (when (= "sending" (:status msg))
                 [:div.loaders.spinner])
               [:div {:class (str "message " (when (= "sending" (:status msg)) "sending"))}
-               (:data msg)]]]))
+               (:data msg)]
+              [:div {:class "timestamp"} (misc/format-time-message (:timestamp msg))]]]))
 
 (defn selected-conv
   [state]
