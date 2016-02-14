@@ -88,11 +88,16 @@ main {
           .message {
             background-color: #424242;
             color: white;
+            .spinner {
+              position: absolute;
+              left: -25px;
+            }
           }
         }
         .message {
           padding: 10px;
           max-width: 450px;
+          position: relative;
         }
       }
     }

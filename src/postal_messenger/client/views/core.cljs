@@ -29,7 +29,10 @@
           (let [prev-msg (get-in state [:conversations (:selected-conversation state) :messages (dec idx)])]
             ;;TODO: Message grouping will need to be more specific when group messagin is added
             [:div {:class (str (:type msg) " message-container " (when (= (:type msg) (:type prev-msg)) "grouped"))}
-             [:div {:class "message"} (:data msg)]]))
+             [:div {:class "message"}
+              (when (= "sending" (:status msg))
+                [:div.loaders.spinner])
+              (:data msg)]]))
 
 (defn- message-handler
   [msg message-bus]
