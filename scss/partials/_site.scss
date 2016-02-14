@@ -92,6 +92,9 @@ main {
             //.message.sending {
             //  opacity: 0.1;
             //}
+            .message {
+              overflow: hidden;
+            }
             .spinner {
               left: -25px;
               position: absolute;
