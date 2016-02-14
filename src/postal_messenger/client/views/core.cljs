@@ -11,29 +11,9 @@
             [beicon.core :as s]
             [pusher.core :as pusher]))
 
-(rum/defc conversation-item
-          [message-bus state id]
-          (let [conv (get-in state [:conversations id])]
-            [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
-                   :key      (str "conv" id)
-                   :on-click (fn [] (do! message-bus #(assoc % :selected-conversation id)))}
-             [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
-             [:div
-              [:div.layout.horizontal
-               [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:recipients conv))]
-               [:div {:class "last-update"} (misc/format-time (:last-update conv))]]
-              [:span {:class "last-message one-line-text"} (-> conv :messages last misc/msg-text)]]]))
-
-(rum/defc message
-          [message-bus msg idx state]
-          (let [prev-msg (get-in state [:conversations (:selected-conversation state) :messages (dec idx)])]
-            ;;TODO: Message grouping will need to be more specific when group messagin is added
-            [:div {:class (str (:type msg) " message-row " (when (= (:type msg) (:type prev-msg)) "grouped"))}
-             [:div {:class "message-container"}
-              (when (= "sending" (:status msg))
-                [:div.loaders.spinner])
-              [:div {:class (str "message " (when (= "sending" (:status msg)) "sending"))}
-               (:data msg)]]]))
+;;====================================
+;; HELPERS
+;;====================================
 
 (defn- message-handler
   [msg message-bus]
@@ -59,6 +39,40 @@
                             (connect-pusher (:message-channel body) (:api-key body) message-bus)))
                   state))})
 
+(defn scroll-messages-to-bottom
+  []
+  (js/setTimeout #(misc/scroll-to-bottom (.querySelector js/document "#message-list-container"))))
+
+;;====================================
+;; UI
+;;====================================
+
+(rum/defc conversation-item
+          [message-bus state id]
+          (let [conv (get-in state [:conversations id])]
+            [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
+                   :key      (str "conv" id)
+                   :on-click (fn []
+                               (do! message-bus #(assoc % :selected-conversation id))
+                               (scroll-messages-to-bottom))}
+             [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
+             [:div
+              [:div.layout.horizontal
+               [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:recipients conv))]
+               [:div {:class "last-update"} (misc/format-time (:last-update conv))]]
+              [:span {:class "last-message one-line-text"} (-> conv :messages last misc/msg-text)]]]))
+
+(rum/defc message
+          [message-bus msg idx state]
+          (let [prev-msg (get-in state [:conversations (:selected-conversation state) :messages (dec idx)])]
+            ;;TODO: Message grouping will need to be more specific when group messagin is added
+            [:div {:class (str (:type msg) " message-row " (when (= (:type msg) (:type prev-msg)) "grouped"))}
+             [:div {:class "message-container"}
+              (when (= "sending" (:status msg))
+                [:div.loaders.spinner])
+              [:div {:class (str "message " (when (= "sending" (:status msg)) "sending"))}
+               (:data msg)]]]))
+
 (defn selected-conv
   [state]
   (get-in state [:conversations (:selected-conversation state)]))
@@ -77,7 +91,7 @@
                                                   :data   value
                                                   :status "sending"})))))
       (do! message-bus #(assoc % :input-value ""))
-      (js/setTimeout #(misc/scroll-to-bottom (.querySelector js/document "#message-list-container")))
+      (scroll-messages-to-bottom)
       (m/send-message! socket_id id conv value))))
 
 (rum/defc root < subscribe-on-mount
