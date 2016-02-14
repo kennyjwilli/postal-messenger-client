@@ -94,6 +94,7 @@ main {
             //}
             .message {
               overflow: hidden;
+              text-overflow: ellipsis;
             }
             .spinner {
               left: -25px;
