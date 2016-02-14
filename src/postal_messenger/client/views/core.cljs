@@ -32,7 +32,9 @@
                                              recips (:recipients message)]
                                          (notif/notify (misc/format-recipients recips)
                                                        {:body     (misc/msg-text message)
-                                                        :on-click (fn []
+                                                        :on-click (fn [n]
+                                                                    (notif/close n)
+                                                                    (.focus js/window)
                                                                     (do! message-bus (partial select-conv (m/conversation-id recips))))})
                                          (assoc-in s [:conversations id :last-update] (:timestamp message))))))))
 
