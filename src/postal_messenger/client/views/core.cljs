@@ -23,20 +23,24 @@
 (defn- message-handler
   [msg message-bus]
   (when (= (:dest msg) "client")
-    (condp = (:type msg)
-      "add-message" (do! message-bus (fn [s]
-                                       ;; TODO: Normalize message (e.g. Change timestamp to be a cljs-time obj)
-                                       (let [message (:message msg)
-                                             id (m/conversation-id (:recipients message))
-                                             s (update-in s [:conversations id :messages] #(conj % message))
-                                             recips (:recipients message)]
-                                         (notif/notify (misc/format-recipients recips)
-                                                       {:body     (misc/msg-text message)
-                                                        :on-click (fn [n]
-                                                                    (notif/close n)
-                                                                    (.focus js/window)
-                                                                    (do! message-bus (partial select-conv (m/conversation-id recips))))})
-                                         (assoc-in s [:conversations id :last-update] (:timestamp message))))))))
+    ;; TODO: Normalize message (e.g. Change timestamp to be a cljs-time obj)
+    (let [message (:message msg)
+          id (m/conversation-id (:recipients message))]
+      (condp = (:type msg)
+        "add-message" (do! message-bus (fn [s]
+                                         (let [s (update-in s [:conversations id :messages] #(conj % message))
+                                               recips (:recipients message)]
+                                           (notif/notify (misc/format-recipients recips)
+                                                         {:body     (misc/msg-text message)
+                                                          :on-click (fn [n]
+                                                                      (notif/close n)
+                                                                      (.focus js/window)
+                                                                      (do! message-bus (partial select-conv (m/conversation-id recips))))})
+                                           (assoc-in s [:conversations id :last-update] (:timestamp message)))))
+        "message-sent" (do! message-bus (fn [s]
+                                          (let [idx (:idx message)
+                                                s (assoc-in s [:conversations id :messages idx :status] "sent")]
+                                            (assoc-in s [:conversations id :last-update] (:timestamp message)))))))))
 
 (defn- connect-pusher
   [channel api-key message-bus]
@@ -59,6 +63,29 @@
 (defn scroll-messages-to-bottom
   []
   (js/setTimeout #(misc/scroll-to-bottom (.querySelector js/document "#message-list-container"))))
+
+
+(defn selected-conv
+  [state]
+  (get-in state [:conversations (:selected-conversation state)]))
+
+(defn send-message!
+  [message-bus state]
+  (when-not (str/blank? (:input-value state))
+    (let [socket_id (:socket_id state)
+          conv (selected-conv state)
+          idx (-> conv :messages count)
+          value (:input-value state)]
+      (do! message-bus (fn [s]
+                         (let [s (update-in s [:conversations (:selected-conversation state) :messages]
+                                            (fn [msgs]
+                                              (conj msgs {:type   "sent"
+                                                          :data   value
+                                                          :status "sending"})))]
+                           (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
+      (do! message-bus #(assoc % :input-value ""))
+      (scroll-messages-to-bottom)
+      (m/send-message! socket_id idx conv value))))
 
 ;;====================================
 ;; UI
@@ -94,28 +121,6 @@
                  (if t
                    (misc/format-time-message t)
                    "Sending..."))]]]))
-
-(defn selected-conv
-  [state]
-  (get-in state [:conversations (:selected-conversation state)]))
-
-(defn send-message!
-  [message-bus state]
-  (when-not (str/blank? (:input-value state))
-    (let [socket_id (:socket_id state)
-          ;;TODO: Probably need to replace message id with uuid/hash
-          id (str (gensym "msg"))
-          conv (selected-conv state)
-          value (:input-value state)]
-      (do! message-bus (fn [s]
-                         (update-in s [:conversations (:selected-conversation state) :messages]
-                                    (fn [msgs]
-                                      (conj msgs {:type   "sent"
-                                                  :data   value
-                                                  :status "sending"})))))
-      (do! message-bus #(assoc % :input-value ""))
-      (scroll-messages-to-bottom)
-      (m/send-message! socket_id id conv value))))
 
 (rum/defc root < subscribe-on-mount
           [message-bus state]
