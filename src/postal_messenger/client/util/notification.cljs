@@ -23,7 +23,7 @@
   ([title] (notify title {}))
   ([title {:keys [timeout on-click on-error] :or {timeout 4000} :as opts}]
    (let [n (js/Notification. title (clj->js opts))]
-     (aset n "onclick" on-click)
-     (aset n "onerror" on-error)
+     (aset n "onclick" (partial on-click n))
+     (aset n "onerror" (partial on-error n))
      (js/setTimeout (.. n -close (bind n)) timeout)
      n)))
