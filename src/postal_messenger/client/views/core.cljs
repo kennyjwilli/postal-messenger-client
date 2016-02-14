@@ -77,6 +77,7 @@
                                                   :data   value
                                                   :status "sending"})))))
       (do! message-bus #(assoc % :input-value ""))
+      (js/setTimeout #(misc/scroll-to-bottom (.querySelector js/document "#message-list-container")))
       (m/send-message! socket_id id conv value))))
 
 (rum/defc root < subscribe-on-mount
@@ -93,7 +94,8 @@
                       (-> state :conversations m/sort-conversations))]
                 [:div {:class "flex conv-messages"}
                  [:div.fit
-                  [:div {:class "message-list-container"}
+                  [:div {:class "message-list-container"
+                         :id    "message-list-container"}
                    (let [messages (:messages conv)]
                      (map-indexed (fn [idx msg]
                                     (message message-bus msg idx state)) messages))]

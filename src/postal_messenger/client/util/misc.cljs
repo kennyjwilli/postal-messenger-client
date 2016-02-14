@@ -34,6 +34,10 @@
   [url]
   (.. js/window -location (replace url)))
 
+(defn scroll-to-bottom
+  [elem]
+  (aset elem "scrollTop" (aget elem "scrollHeight")))
+
 (defn format-recipients
   [recip-list]
   (str/join ", " (map (fn [recip] (str (:first-name recip) " " (:last-name recip))) recip-list)))
