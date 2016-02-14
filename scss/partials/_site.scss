@@ -147,6 +147,15 @@ main {
   height: 50px;
   margin-bottom: $main-spacing;
   width: 100%;
+  .avatar {
+    cursor: pointer;
+    margin-right: $main-spacing;
+  }
+  .title {
+    color: white;
+    font-size: 25px;
+    margin-left: $main-spacing;
+  }
 }
 
 .noselect {

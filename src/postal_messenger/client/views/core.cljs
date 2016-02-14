@@ -119,7 +119,12 @@
           [message-bus state]
           (let [conv (selected-conv state)]
             [:div.layout.vertical
-             [:div.nav-bar {:style {:background-color "green"}}]
+             [:div.nav-bar {:style {:background-color "green"}}
+              [:div.layout.horizontal {:style {:height "100%"}}
+               [:div.flex.layout.vertical.center-justified
+                [:span.title "Postal Messenger"]]
+               [:div.layout.vertical.center-justified
+                [:div.avatar {:style {:background-image (str "url(img/dexter.jpg)")}}]]]]
              [:main.flex
               [:div {:class "horz-center conv-container"}
                [:div.layout.horizontal.fit
