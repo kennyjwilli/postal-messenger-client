@@ -19,7 +19,12 @@
   [msg message-bus]
   (when (= (:dest msg) "client")
     (condp = (:type msg)
-      "add-message" (do! message-bus (fn [s] (update s :messages #(conj % (:message msg))))))))
+      "add-message" (do! message-bus (fn [s]
+                                       ;; TODO: Normalize message (e.g. Change timestamp to be a cljs-time obj)
+                                       (let [message (:message msg)
+                                             id (m/conversation-id (:recipients message))
+                                             s (update-in s [:conversations id :messages] #(conj % message))]
+                                         (assoc-in s [:conversations id :last-update] (:timestamp message))))))))
 
 (defn- connect-pusher
   [channel api-key message-bus]
