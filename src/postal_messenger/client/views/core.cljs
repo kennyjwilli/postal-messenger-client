@@ -7,6 +7,7 @@
             [postal-messenger.client.util.misc :as misc]
             [clojure.string :as str]
             [postal-messenger.client.util.http :as http]
+            [postal-messenger.client.util.notification :as notif]
             [promesa.core :as p]
             [beicon.core :as s]
             [pusher.core :as pusher]))
@@ -14,6 +15,10 @@
 ;;====================================
 ;; HELPERS
 ;;====================================
+
+(defn select-conv
+  [id state]
+  (assoc state :selected-conversation id))
 
 (defn- message-handler
   [msg message-bus]
@@ -23,7 +28,12 @@
                                        ;; TODO: Normalize message (e.g. Change timestamp to be a cljs-time obj)
                                        (let [message (:message msg)
                                              id (m/conversation-id (:recipients message))
-                                             s (update-in s [:conversations id :messages] #(conj % message))]
+                                             s (update-in s [:conversations id :messages] #(conj % message))
+                                             recips (:recipients message)]
+                                         (notif/notify (misc/format-recipients recips)
+                                                       {:body     (misc/msg-text message)
+                                                        :on-click (fn []
+                                                                    (do! message-bus (partial select-conv (m/conversation-id recips))))})
                                          (assoc-in s [:conversations id :last-update] (:timestamp message))))))))
 
 (defn- connect-pusher
@@ -58,7 +68,7 @@
             [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
                    :key      (str "conv" id)
                    :on-click (fn []
-                               (do! message-bus #(assoc % :selected-conversation id))
+                               (do! message-bus (partial select-conv id))
                                (scroll-messages-to-bottom))}
              [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
              [:div
@@ -77,7 +87,11 @@
                 [:div.loaders.spinner])
               [:div {:class (str "message " (when (= "sending" (:status msg)) "sending"))}
                (:data msg)]
-              [:div {:class "timestamp"} (misc/format-time-message (:timestamp msg))]]]))
+              [:div {:class "timestamp"}
+               (let [t (:timestamp msg)]
+                 (if t
+                   (misc/format-time-message t)
+                   "Sending..."))]]]))
 
 (defn selected-conv
   [state]
@@ -87,6 +101,7 @@
   [message-bus state]
   (when-not (str/blank? (:input-value state))
     (let [socket_id (:socket_id state)
+          ;;TODO: Probably need to replace message id with uuid/hash
           id (str (gensym "msg"))
           conv (selected-conv state)
           value (:input-value state)]
