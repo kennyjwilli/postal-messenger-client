@@ -64,7 +64,7 @@ main {
       right: 0;
       bottom: 49px;
       overflow: auto;
-      .message-container {
+      .message-row {
         @extend .horizontal.layout;
         $margin-size: 15px;
         margin-top: 10px;
@@ -72,12 +72,12 @@ main {
           margin-bottom: $margin-size;
         }
         &.grouped {
-          margin-top: 5px;
+          margin-top: 3px;
         }
         &.received {
           @extend .start-justified.layout;
           margin-left: $margin-size;
-          .message {
+          .message-container {
             background-color: #009688;
             color: white;
           }
@@ -85,16 +85,19 @@ main {
         &.sent {
           @extend .end-justified.layout;
           margin-right: $margin-size;
-          .message {
+          .message-container {
             background-color: #424242;
             color: white;
+            //.message.sending {
+            //  opacity: 0.1;
+            //}
             .spinner {
               position: absolute;
               left: -25px;
             }
           }
         }
-        .message {
+        .message-container {
           padding: 10px;
           max-width: 450px;
           position: relative;

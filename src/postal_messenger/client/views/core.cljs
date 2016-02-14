@@ -28,11 +28,12 @@
           [message-bus msg idx state]
           (let [prev-msg (get-in state [:conversations (:selected-conversation state) :messages (dec idx)])]
             ;;TODO: Message grouping will need to be more specific when group messagin is added
-            [:div {:class (str (:type msg) " message-container " (when (= (:type msg) (:type prev-msg)) "grouped"))}
-             [:div {:class "message"}
+            [:div {:class (str (:type msg) " message-row " (when (= (:type msg) (:type prev-msg)) "grouped"))}
+             [:div {:class "message-container"}
               (when (= "sending" (:status msg))
                 [:div.loaders.spinner])
-              (:data msg)]]))
+              [:div {:class (str "message " (when (= "sending" (:status msg)) "sending"))}
+               (:data msg)]]]))
 
 (defn- message-handler
   [msg message-bus]
