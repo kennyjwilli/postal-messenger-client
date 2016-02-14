@@ -69,13 +69,21 @@
   [state]
   (get-in state [:conversations (:selected-conversation state)]))
 
+(defn input-value
+  [state]
+  (get-in state [:conversations (:selected-conversation state) :input-value]))
+
+(defn update-input-value
+  [v state]
+  (assoc-in state [:conversations (:selected-conversation state) :input-value] v))
+
 (defn send-message!
   [message-bus state]
-  (when-not (str/blank? (:input-value state))
+  (when-not (str/blank? (input-value state))
     (let [socket_id (:socket_id state)
           conv (selected-conv state)
           idx (-> conv :messages count)
-          value (:input-value state)]
+          value (input-value state)]
       (do! message-bus (fn [s]
                          (let [s (update-in s [:conversations (:selected-conversation state) :messages]
                                             (fn [msgs]
@@ -83,7 +91,7 @@
                                                           :data   value
                                                           :status "sending"})))]
                            (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
-      (do! message-bus #(assoc % :input-value ""))
+      (do! message-bus (partial update-input-value ""))
       (scroll-messages-to-bottom)
       (m/send-message! socket_id idx conv value))))
 
@@ -153,14 +161,14 @@
                              :placeholder     "Send a message"
                              :contentEditable true
                              :on-input        (fn [e]
-                                                (do! message-bus #(assoc % :input-value (aget e "target" "outerText"))))
+                                                (do! message-bus (partial update-input-value (aget e "target" "outerText"))))
                              :on-key-down     (fn [e]
                                                 (when (= 13 (aget e "keyCode"))
                                                   (when-not (aget e "shiftKey")
                                                     (.stopPropagation e)
                                                     (.preventDefault e)
                                                     (send-message! message-bus state))))}
-                      (:input-value state)]
+                      (input-value state)]
                      [:div.layout.vertical.center-justified
                       [:i {:class    "zmdi zmdi-mail-send"
                            :on-click (fn [] (send-message! message-bus state))}]]]]]]]]]]]))

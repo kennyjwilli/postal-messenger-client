@@ -10,8 +10,7 @@
 (enable-console-print!)
 
 (def initial-state
-  {:input-value           ""
-   :socket_id             ""
+  {:socket_id             ""
    :selected-conversation nil
    :conversations         {(msg/conversation-id [{:phone      "4445556666"
                                                   :first-name "Mary"
