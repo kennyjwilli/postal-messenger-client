@@ -93,7 +93,7 @@
 (defn format-time-message
   [time]
   (letfn [(parse [fmt] (ft/unparse fmt time))
-          (time-format [] (str/upper-case (parse (ft/formatter "h:m a"))))]
+          (time-format [] (str/upper-case (parse (ft/formatter "h:mm a"))))]
     (cond
       (within-today? time) (time-format)
       (within-week? time) (let [d (js/parseInt (ft/unparse (ft/formatter "e") time))]
