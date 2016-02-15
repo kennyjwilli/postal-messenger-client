@@ -85,7 +85,7 @@
   [time]
   (letfn [(parse [fmt] (ft/unparse fmt time))]
     (cond
-      (within-today? time) (str/upper-case (parse (ft/formatter "h:m a")))
+      (within-today? time) (str/upper-case (parse (ft/formatter "h:mm a")))
       (within-week? time) (let [d (js/parseInt (ft/unparse (ft/formatter "e") time))]
                             (days-of-week-short d))
       :default (parse (ft/formatter "MM/dd/yyyy")))))
