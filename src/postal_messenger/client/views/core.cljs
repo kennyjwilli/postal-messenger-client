@@ -24,19 +24,23 @@
   [msg message-bus]
   (when (= (:dest msg) "client")
     ;; TODO: Normalize message (e.g. Change timestamp to be a cljs-time obj)
-    (let [message (:message msg)
-          id (m/conversation-id (:recipients message))]
+    (let [message (-> msg :message m/normalize-message)
+          id (m/conversation-id (:recipients message))
+          recipients (:recipients message)]
       (condp = (:type msg)
-        "add-message" (do! message-bus (fn [s]
-                                         (let [s (update-in s [:conversations id :messages] #(conj % message))
-                                               recips (:recipients message)]
-                                           (notif/notify (misc/format-recipients recips)
-                                                         {:body     (misc/msg-text message)
-                                                          :on-click (fn [n]
-                                                                      (notif/close n)
-                                                                      (.focus js/window)
-                                                                      (do! message-bus (partial select-conv (m/conversation-id recips))))})
-                                           (assoc-in s [:conversations id :last-update] (:timestamp message)))))
+        "add-message" (do
+                        (do! message-bus (fn [s]
+                                           (println "before" s)
+                                           (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
+                                                 s (assoc-in s [:conversations id :last-update] (:timestamp message))]
+                                             (println "after" s)
+                                             s)))
+                        (notif/notify (misc/format-recipients recipients)
+                                      {:body     (misc/msg-text message)
+                                       :on-click (fn [n]
+                                                   (notif/close n)
+                                                   (.focus js/window)
+                                                   (do! message-bus (partial select-conv id)))}))
         "message-sent" (do! message-bus (fn [s]
                                           (let [idx (:idx message)
                                                 s (assoc-in s [:conversations id :messages idx :status] "sent")]
