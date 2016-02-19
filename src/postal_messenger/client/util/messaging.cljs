@@ -1,6 +1,8 @@
 (ns postal-messenger.client.util.messaging
   (:require [postal-messenger.client.util.http :as http]
-            [cljs-time.core :as t]))
+            [cljs-time.core :as t]
+            [cljs-time.coerce :as ct]
+            [cljs-time.format :as fmt]))
 
 (defn conversation-id
   "Returns a unique id for a given set of recipients."
@@ -21,6 +23,11 @@
   (into (sorted-map-by (fn [x y]
                          (time-comparator (get-in convs [x :last-update])
                                           (get-in convs [y :last-update])))) convs))
+
+(defn normalize-message
+  [msg]
+  (update msg :timestamp (fn [timestamp]
+                           (fmt/parse (:date-hour-minute-second-ms fmt/formatters) timestamp))))
 
 (defn send-message!
   [socket_id idx conv msg]
