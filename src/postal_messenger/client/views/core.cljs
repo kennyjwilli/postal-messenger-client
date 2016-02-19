@@ -22,6 +22,7 @@
 
 (defn- message-handler
   [msg message-bus]
+  (println "INCOMING" msg)
   (when (= (:dest msg) "client")
     (let [message (-> msg :message m/normalize-message)
           id (m/conversation-id (:recipients message))
@@ -29,7 +30,8 @@
       (condp = (:type msg)
         "add-message" (do
                         (do! message-bus (fn [s]
-                                           (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))]
+                                           (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
+                                                 s (assoc-in s [:conversations id :recipients] recipients)]
                                              (assoc-in s [:conversations id :last-update] (:timestamp message)))))
                         (notif/notify (misc/format-recipients recipients)
                                       {:body     (misc/msg-text message)
@@ -38,7 +40,9 @@
                                                    (.focus js/window)
                                                    (do! message-bus (partial select-conv id)))}))
         "message-sent" (do! message-bus (fn [s]
+                                          (println "message-sent")
                                           (let [idx (:idx message)
+                                                _ (println "idx" idx)
                                                 s (assoc-in s [:conversations id :messages idx :status] "sent")]
                                             (assoc-in s [:conversations id :last-update] (:timestamp message)))))))))
 
