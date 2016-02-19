@@ -9,28 +9,30 @@
 
 (enable-console-print!)
 
+(def mary
+  {:phoneNumbers [{:number "4445556666"}]
+   :name         "Mary Smith"})
+
+(def john
+  {:phoneNumbers [{:number "2223334444"}]
+   :name         "John Example"})
+
 (def initial-state
   {:socket_id             ""
    :selected-conversation nil
-   :conversations         {(msg/conversation-id [{:phone      "4445556666"
-                                                  :first-name "Mary"
-                                                  :last-name  "Smith"}])
-                           {:recipients  [{:phone      "4445556666"
-                                           :first-name "Mary"
-                                           :last-name  "Smith"}]
-                            :last-update (t/date-time 2016 2 10 8 13)
+   :contacts              {"4445556666" mary
+                           "1112223333" john}
+   :conversations         {(msg/conversation-id [mary])
+                           {:recipients  [mary]
+                            :last-update (t/date-time 2016 2 18 8 13)
                             :messages    [{:data      "mary message"
                                            :type      "sent"
                                            :timestamp (t/date-time 2016 2 10 8 12)}
                                           {:data      "recieved mary message"
                                            :type      "received"
-                                           :timestamp (t/date-time 2016 2 10 8 13)}]}
-                           (msg/conversation-id [{:phone      "1112223333"
-                                                  :first-name "John"
-                                                  :last-name  "Example"}])
-                           {:recipients  [{:phone      "1112223333"
-                                           :first-name "John"
-                                           :last-name  "Example"}]
+                                           :timestamp (t/date-time 2016 2 18 8 13)}]}
+                           (msg/conversation-id [john])
+                           {:recipients  [john]
                             :last-update (t/date-time 2016 2 12 10 55)
                             :messages    [{:data      "first"
                                            :type      "sent"
