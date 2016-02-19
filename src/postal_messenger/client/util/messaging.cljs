@@ -7,7 +7,7 @@
 (defn conversation-id
   "Returns a unique id for a given set of recipients."
   [recipients]
-  (hash (sort-by hash recipients)))
+  (hash (sort-by hash (mapv #(select-keys % [:name :phoneNumbers]) recipients))))
 
 (defn time-comparator
   "Sort time by closest time first"
@@ -33,8 +33,8 @@
   [socket_id idx conv msg]
   (http/post! "/api/message" {:dest      :phone
                               :type      :send-message
-                              :idx       idx
                               :socket_id socket_id
                               :message   {:type       :sent
+                                          :idx        idx
                                           :recipients (:recipients conv)
                                           :data       msg}}))
