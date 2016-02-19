@@ -23,18 +23,14 @@
 (defn- message-handler
   [msg message-bus]
   (when (= (:dest msg) "client")
-    ;; TODO: Normalize message (e.g. Change timestamp to be a cljs-time obj)
     (let [message (-> msg :message m/normalize-message)
           id (m/conversation-id (:recipients message))
           recipients (:recipients message)]
       (condp = (:type msg)
         "add-message" (do
                         (do! message-bus (fn [s]
-                                           (println "before" s)
-                                           (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
-                                                 s (assoc-in s [:conversations id :last-update] (:timestamp message))]
-                                             (println "after" s)
-                                             s)))
+                                           (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))]
+                                             (assoc-in s [:conversations id :last-update] (:timestamp message)))))
                         (notif/notify (misc/format-recipients recipients)
                                       {:body     (misc/msg-text message)
                                        :on-click (fn [n]
@@ -51,7 +47,7 @@
   (let [p (pusher/pusher api-key {:authEndpoint "/api/pusher-auth"
                                   :auth         {:headers (misc/jwt-headers)}})
         channel (pusher/channel p channel)
-        pusher-bus (pusher/subscribe channel "messages" {:parse-fn http/decode-json})
+        pusher-bus (pusher/subscribe channel "messages" {:parse-fn #(js->clj % :keywordize-keys true)})
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
     (pusher/on-connected p (fn [] (do! message-bus (fn [s] (assoc s :socket_id (pusher/socket-id p))))))
     (s/on-value pusher-bus #(message-handler % message-bus))))
