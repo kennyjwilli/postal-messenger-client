@@ -40,7 +40,10 @@
 
 (defn format-recipients
   [recip-list]
-  (str/join ", " (map (fn [recip] (str (:first-name recip) " " (:last-name recip))) recip-list)))
+  (str/join ", " (map (fn [recip]
+                        (if (:name recip)
+                          (:name recip)
+                          (-> recip :phoneNumbers first :number))) recip-list)))
 
 ;;TODO: Will need to handle MMS
 (defn msg-text
