@@ -24,11 +24,11 @@
   [msg message-bus]
   (println "INCOMING" msg)
   (when (= (:dest msg) "client")
-    (let [message (-> msg :message m/normalize-message)
-          id (m/conversation-id (:recipients message))
-          recipients (:recipients message)]
+    (let []
       (condp = (:type msg)
-        "add-message" (do
+        "add-message" (let [message (-> msg :message m/normalize-message)
+                            id (m/conversation-id (:recipients message))
+                            recipients (:recipients message)]
                         (do! message-bus (fn [s]
                                            (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
                                                  s (assoc-in s [:conversations id :recipients] recipients)]
@@ -41,10 +41,14 @@
                                                    (do! message-bus (partial select-conv id)))}))
         "message-sent" (do! message-bus (fn [s]
                                           (println "message-sent")
-                                          (let [idx (:idx message)
+                                          (let [message (-> msg :message m/normalize-message)
+                                                id (m/conversation-id (:recipients message))
+                                                idx (:idx message)
                                                 _ (println "idx" idx)
                                                 s (assoc-in s [:conversations id :messages idx :status] "sent")]
-                                            (assoc-in s [:conversations id :last-update] (:timestamp message)))))))))
+                                            (assoc-in s [:conversations id :last-update] (:timestamp message)))))
+        "get-contacts" (do
+                         (println (:contacts msg)))))))
 
 (defn- connect-pusher
   [channel api-key message-bus]
@@ -52,8 +56,10 @@
                                   :auth         {:headers (misc/jwt-headers)}})
         channel (pusher/channel p channel)
         pusher-bus (pusher/subscribe channel "messages" {:parse-fn #(js->clj % :keywordize-keys true)})
+        socket_id (pusher/socket-id p)
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
-    (pusher/on-connected p (fn [] (do! message-bus (fn [s] (assoc s :socket_id (pusher/socket-id p))))))
+    (m/get-contacts! socket_id)
+    (pusher/on-connected p (fn [] (do! message-bus (fn [s] (assoc s :socket_id socket_id)))))
     (s/on-value pusher-bus #(message-handler % message-bus))))
 
 (def subscribe-on-mount
