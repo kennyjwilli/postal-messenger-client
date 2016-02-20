@@ -58,8 +58,11 @@
         pusher-bus (pusher/subscribe channel "messages" {:parse-fn #(js->clj % :keywordize-keys true)})
         socket_id (pusher/socket-id p)
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
-    (m/get-contacts! socket_id)
-    (pusher/on-connected p (fn [] (do! message-bus (fn [s] (assoc s :socket_id socket_id)))))
+    (pusher/on-connected p (fn []
+                             ;; TODO: Store contacts in localstorage
+                             (m/get-contacts! socket_id)
+                             (do! message-bus (fn [s]
+                                                (assoc s :socket_id socket_id)))))
     (s/on-value pusher-bus #(message-handler % message-bus))))
 
 (def subscribe-on-mount
