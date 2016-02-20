@@ -29,12 +29,22 @@
   (update msg :timestamp (fn [timestamp]
                            (fmt/parse (:date-hour-minute-second-ms fmt/formatters) timestamp))))
 
+(defn send-event!
+  [body]
+  (http/post! "api/message" body))
+
 (defn send-message!
   [socket_id idx conv msg]
-  (http/post! "/api/message" {:dest      :phone
-                              :type      :send-message
-                              :socket_id socket_id
-                              :message   {:type       :sent
-                                          :idx        idx
-                                          :recipients (:recipients conv)
-                                          :data       msg}}))
+  (send-event! {:dest      :phone
+                :type      :send-message
+                :socket_id socket_id
+                :message   {:type       :sent
+                            :idx        idx
+                            :recipients (:recipients conv)
+                            :data       msg}}))
+
+(defn get-contacts!
+  [socket_id]
+  (send-event! {:dest      :phone
+                :type      :get-contacts
+                :socket_id socket_id}))
