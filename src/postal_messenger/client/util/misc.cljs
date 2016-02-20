@@ -102,3 +102,10 @@
       (within-week? time) (let [d (js/parseInt (ft/unparse (ft/formatter "e") time))]
                             (str (days-of-week-short d) " " (time-format)))
       :default (str (parse (ft/formatter "MM/dd/yyyy")) " " (time-format)))))
+
+(defn contacts-list->map
+  [contacts-list]
+  (into {}
+        (mapcat (fn [m]
+                  (map (fn [num-map]
+                         [(:number num-map) m]) (:phoneNumbers m))) contacts-list)))

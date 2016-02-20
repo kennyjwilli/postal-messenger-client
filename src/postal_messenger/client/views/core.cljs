@@ -20,13 +20,13 @@
   [id state]
   (assoc state :selected-conversation id))
 
-(defn- message-handler
-  [msg message-bus]
-  (println "INCOMING" msg)
-  (when (= (:dest msg) "client")
+(defn- event-handler
+  [evt message-bus]
+  (println "INCOMING" evt)
+  (when (= (:dest evt) "client")
     (let []
-      (condp = (:type msg)
-        "add-message" (let [message (-> msg :message m/normalize-message)
+      (condp = (:type evt)
+        "add-message" (let [message (-> evt :message m/normalize-message)
                             id (m/conversation-id (:recipients message))
                             recipients (:recipients message)]
                         (do! message-bus (fn [s]
@@ -41,14 +41,14 @@
                                                    (do! message-bus (partial select-conv id)))}))
         "message-sent" (do! message-bus (fn [s]
                                           (println "message-sent")
-                                          (let [message (-> msg :message m/normalize-message)
+                                          (let [message (-> evt :message m/normalize-message)
                                                 id (m/conversation-id (:recipients message))
                                                 idx (:idx message)
                                                 _ (println "idx" idx)
                                                 s (assoc-in s [:conversations id :messages idx :status] "sent")]
                                             (assoc-in s [:conversations id :last-update] (:timestamp message)))))
-        "get-contacts" (do
-                         (println (:contacts msg)))))))
+        "get-contacts" (do! message-bus (fn [s]
+                                          (assoc s :contacts (misc/contacts-list->map (:contacts evt)))))))))
 
 (defn- connect-pusher
   [channel api-key message-bus]
@@ -56,14 +56,14 @@
                                   :auth         {:headers (misc/jwt-headers)}})
         channel (pusher/channel p channel)
         pusher-bus (pusher/subscribe channel "messages" {:parse-fn #(js->clj % :keywordize-keys true)})
-        socket_id (pusher/socket-id p)
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
     (pusher/on-connected p (fn []
-                             ;; TODO: Store contacts in localstorage
-                             (m/get-contacts! socket_id)
-                             (do! message-bus (fn [s]
-                                                (assoc s :socket_id socket_id)))))
-    (s/on-value pusher-bus #(message-handler % message-bus))))
+                             (let [socket_id (pusher/socket-id p)]
+                               (s/on-value pusher-bus #(event-handler % message-bus))
+                               ;; TODO: Store contacts in localstorage
+                               (m/get-contacts! socket_id)
+                               (do! message-bus (fn [s]
+                                                  (assoc s :socket_id socket_id))))))))
 
 (def subscribe-on-mount
   {:did-mount (fn [state]
