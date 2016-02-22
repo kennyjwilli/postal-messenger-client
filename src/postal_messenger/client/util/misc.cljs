@@ -2,7 +2,8 @@
   (:require [clojure.string :as str]
             [cljs-time.core :as t]
             [cljs-time.format :as ft]
-            [postal-messenger.client.util.cookie :as cookie])
+            [postal-messenger.client.util.cookie :as cookie]
+            [datascript.core :as d])
   (:import
     goog.date.Date
     goog.date.DateTime
@@ -38,12 +39,23 @@
   [elem]
   (aset elem "scrollTop" (aget elem "scrollHeight")))
 
+(defn contact-from-number
+  [number db]
+  (d/entity db
+            (d/q '[:find ?c .
+                   :in $ ?num
+                   :where
+                   [?n :number/number ?num]
+                   [?c :contact/numbers ?n]] db number)))
+
 (defn format-recipients
-  [recip-list]
-  (str/join ", " (map (fn [recip]
-                        (if (:name recip)
-                          (:name recip)
-                          (-> recip :phoneNumbers first :number))) recip-list)))
+  [db recip-list]
+  (str/join ", " (map (fn [num]
+                        (let [contact (contact-from-number num db)]
+                          (if contact
+                            (:contact/name contact)
+                            ;; TODO: format phone number
+                            num))) recip-list)))
 
 ;;TODO: Will need to handle MMS
 (defn msg-text
