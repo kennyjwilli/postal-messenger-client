@@ -5,41 +5,47 @@
             [postal-messenger.client.views.core :as view]
             [postal-messenger.client.util.misc :as misc]
             [postal-messenger.client.util.messaging :as msg]
-            [cljs-time.core :as t]))
+            [postal-messenger.client.schema :as schema]
+            [cljs-time.core :as t]
+            [datascript.core :as d]))
 
 (enable-console-print!)
 
-(def mary
-  {:phoneNumbers [{:number "4445556666"}]
-   :name         "Mary Smith"})
+(def mary-num "4445556666")
 
-(def john
-  {:phoneNumbers [{:number "2223334444"}]
-   :name         "John Example"})
+(def john-num "2223334444")
 
 (def initial-state
-  {:socket_id             ""
-   :selected-conversation nil
-   :contacts              {"4445556666" mary
-                           "1112223333" john}
-   :conversations         {(msg/conversation-id [mary])
-                           {:recipients  [mary]
-                            :last-update (t/date-time 2016 2 18 8 13)
-                            :messages    [{:data      "mary message"
-                                           :type      "sent"
-                                           :timestamp (t/date-time 2016 2 10 8 12)}
-                                          {:data      "recieved mary message"
-                                           :type      "received"
-                                           :timestamp (t/date-time 2016 2 18 8 13)}]}
-                           (msg/conversation-id [john])
-                           {:recipients  [john]
-                            :last-update (t/date-time 2016 2 12 10 55)
-                            :messages    [{:data      "first"
-                                           :type      "sent"
-                                           :timestamp (t/date-time 2016 2 12 10 54)}
-                                          {:data      "second"
-                                           :type      "received"
-                                           :timestamp (t/date-time 2016 2 12 10 55)}]}}})
+  (let [mary-id (d/tempid :db.part/db)
+        john-id (d/tempid :db.part/db)
+        db (d/db-with (d/empty-db schema/schema)
+                      [{:db/id           mary-id
+                        :contact/name    "Mary Smith"
+                        :contact/numbers [{:number/number mary-num :number/type "Mobile"}]}
+                       {:db/id           john-id
+                        :contact/name    "John Example"
+                        :contact/numbers [{:number/number john-num :number/type "Mobile"}]}])]
+    {:socket_id             ""
+     :db                    db
+     :selected-conversation nil
+     :conversations         {(msg/conversation-id [mary-num])
+                             {:recipients  [mary-num]
+                              :last-update (t/date-time 2016 2 18 8 13)
+                              :messages    [{:data      "mary message"
+                                             :type      "sent"
+                                             :timestamp (t/date-time 2016 2 10 8 12)}
+                                            {:data      "recieved mary message"
+                                             :type      "received"
+                                             :timestamp (t/date-time 2016 2 18 8 13)}]}
+                             (msg/conversation-id [john-num])
+                             {:recipients  [john-num]
+                              :last-update (t/date-time 2016 2 12 10 55)
+                              :messages    [{:data      "first"
+                                             :type      "sent"
+                                             :timestamp (t/date-time 2016 2 12 10 54)}
+                                            {:data      "second"
+                                             :type      "received"
+                                             :timestamp (t/date-time 2016 2 12 10 55)}]}}}))
 
 (defn render-fn
   [message-bus state]
