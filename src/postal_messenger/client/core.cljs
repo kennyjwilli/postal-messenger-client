@@ -12,7 +12,6 @@
 (enable-console-print!)
 
 (def mary-num "4445556666")
-
 (def john-num "2223334444")
 
 (def initial-state
@@ -31,19 +30,19 @@
      :conversations         {(msg/conversation-id [mary-num])
                              {:recipients  [mary-num]
                               :last-update (t/date-time 2016 2 18 8 13)
-                              :messages    [{:data      "mary message"
+                              :messages    [{:text      "mary message"
                                              :type      "sent"
                                              :timestamp (t/date-time 2016 2 10 8 12)}
-                                            {:data      "recieved mary message"
+                                            {:text      "recieved mary message"
                                              :type      "received"
                                              :timestamp (t/date-time 2016 2 18 8 13)}]}
                              (msg/conversation-id [john-num])
                              {:recipients  [john-num]
                               :last-update (t/date-time 2016 2 12 10 55)
-                              :messages    [{:data      "first"
+                              :messages    [{:text      "first"
                                              :type      "sent"
                                              :timestamp (t/date-time 2016 2 12 10 54)}
-                                            {:data      "second"
+                                            {:text      "second"
                                              :type      "received"
                                              :timestamp (t/date-time 2016 2 12 10 55)}]}}}))
 

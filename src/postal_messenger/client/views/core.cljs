@@ -11,7 +11,8 @@
             [promesa.core :as p]
             [beicon.core :as s]
             [pusher.core :as pusher]
-            [datascript.core :as d]))
+            [datascript.core :as d]
+            [datascript.transit :as dt]))
 
 ;;====================================
 ;; HELPERS
@@ -117,7 +118,7 @@
                          (let [s (update-in s [:conversations (:selected-conversation state) :messages]
                                             (fn [msgs]
                                               (conj msgs {:type   "sent"
-                                                          :data   value
+                                                          :text   value
                                                           :status "sending"})))]
                            (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
       (do! message-bus (partial update-input-value ""))
@@ -152,7 +153,7 @@
               (when (= "sending" (:status msg))
                 [:div.loaders.spinner])
               [:div {:class (str "message " (when (= "sending" (:status msg)) "sending"))}
-               (:data msg)]
+               (:text msg)]
               [:div {:class "timestamp"}
                (let [t (:timestamp msg)]
                  (if t
