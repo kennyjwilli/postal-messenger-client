@@ -20,39 +20,50 @@
   [id state]
   (assoc state :selected-conversation id))
 
+(defmulti handle-event (fn [evt]
+                         (:type evt)))
+
+(defmethod handle-event "add-message"
+  [event db message-bus]
+  (let [message (-> event :message m/normalize-message)
+        id (m/conversation-id (:recipients message))
+        recipients (:recipients message)]
+    (do! message-bus (fn [s]
+                       (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
+                             s (assoc-in s [:conversations id :recipients] recipients)]
+                         (assoc-in s [:conversations id :last-update] (:timestamp message)))))
+    (notif/notify (misc/format-recipients db recipients)
+                  {:body     (misc/msg-text message)
+                   :on-click (fn [n]
+                               (notif/close n)
+                               (.focus js/window)
+                               (do! message-bus (partial select-conv id)))})))
+
+(defmethod handle-event "message-sent"
+  [event db message-bus]
+  (do! message-bus (fn [s]
+                     (println "message-sent")
+                     (let [message (-> event :message m/normalize-message)
+                           ;; TODO: This fails because recipients does not have a full contact sent.
+                           id (m/conversation-id (:recipients message))
+                           idx (:idx message)
+                           _ (println "idx" idx)
+                           s (assoc-in s [:conversations id :messages idx :status] "sent")]
+                       (assoc-in s [:conversations id :last-update] (:timestamp message))))))
+
+(defmethod handle-event "get-contacts"
+  [event db message-bus]
+  (do! message-bus (fn [s]
+                     (assoc s :contacts (misc/contacts-list->map (:contacts event))))))
+
 (defn- event-handler
-  [evt message-bus]
-  (println "INCOMING" evt)
-  (when (= (:dest evt) "client")
-    (let []
-      (condp = (:type evt)
-        "add-message" (let [message (-> evt :message m/normalize-message)
-                            id (m/conversation-id (:recipients message))
-                            recipients (:recipients message)]
-                        (do! message-bus (fn [s]
-                                           (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
-                                                 s (assoc-in s [:conversations id :recipients] recipients)]
-                                             (assoc-in s [:conversations id :last-update] (:timestamp message)))))
-                        (notif/notify (misc/format-recipients recipients)
-                                      {:body     (misc/msg-text message)
-                                       :on-click (fn [n]
-                                                   (notif/close n)
-                                                   (.focus js/window)
-                                                   (do! message-bus (partial select-conv id)))}))
-        "message-sent" (do! message-bus (fn [s]
-                                          (println "message-sent")
-                                          (let [message (-> evt :message m/normalize-message)
-                                                ;; TODO: This fails because recipients does not have a full contact sent.
-                                                id (m/conversation-id (:recipients message))
-                                                idx (:idx message)
-                                                _ (println "idx" idx)
-                                                s (assoc-in s [:conversations id :messages idx :status] "sent")]
-                                            (assoc-in s [:conversations id :last-update] (:timestamp message)))))
-        "get-contacts" (do! message-bus (fn [s]
-                                          (assoc s :contacts (misc/contacts-list->map (:contacts evt)))))))))
+  [event db message-bus]
+  (println "INCOMING" event)
+  (when (= (:dest event) "client")
+    (handle-event event db message-bus)))
 
 (defn- connect-pusher
-  [channel api-key message-bus]
+  [channel api-key db message-bus]
   (let [p (pusher/pusher api-key {:authEndpoint "/api/pusher-auth"
                                   :auth         {:headers (misc/jwt-headers)}})
         channel (pusher/channel p channel)
@@ -60,7 +71,7 @@
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
     (pusher/on-connected p (fn []
                              (let [socket_id (pusher/socket-id p)]
-                               (s/on-value pusher-bus #(event-handler % message-bus))
+                               (s/on-value pusher-bus #(event-handler % db message-bus))
                                ;; TODO: Store contacts in localstorage
                                (m/get-contacts! socket_id)
                                (do! message-bus (fn [s]
@@ -68,10 +79,11 @@
 
 (def subscribe-on-mount
   {:did-mount (fn [state]
-                (let [message-bus (-> state :rum/args first)]
+                (let [message-bus (-> state :rum/args first)
+                      s (-> state :rum/args second)]
                   (p/then (http/get! "/api/pusher")
                           (fn [{body :body}]
-                            (connect-pusher (:message-channel body) (:api-key body) message-bus)))
+                            (connect-pusher (:message-channel body) (:api-key body) (:db s) message-bus)))
                   state))})
 
 (defn scroll-messages-to-bottom
@@ -124,7 +136,7 @@
              [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
              [:div
               [:div.layout.horizontal
-               [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:recipients conv))]
+               [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:db state) (:recipients conv))]
                [:div {:class "last-update"} (misc/format-time (:last-update conv))]]
               [:span {:class "last-message one-line-text"} (-> conv :messages last misc/msg-text)]]]))
 
