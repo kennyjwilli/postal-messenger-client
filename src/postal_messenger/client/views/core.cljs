@@ -10,7 +10,8 @@
             [postal-messenger.client.util.notification :as notif]
             [promesa.core :as p]
             [beicon.core :as s]
-            [pusher.core :as pusher]))
+            [pusher.core :as pusher]
+            [datascript.core :as d]))
 
 ;;====================================
 ;; HELPERS
@@ -25,9 +26,9 @@
 
 (defmethod handle-event "add-message"
   [event db message-bus]
-  (let [message (-> event :message m/normalize-message)
-        id (m/conversation-id (:recipients message))
-        recipients (:recipients message)]
+  (let [message (-> event :data m/normalize-data)
+        recipients (:recipients message)
+        id (m/conversation-id recipients)]
     (do! message-bus (fn [s]
                        (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
                              s (assoc-in s [:conversations id :recipients] recipients)]
@@ -42,8 +43,7 @@
 (defmethod handle-event "message-sent"
   [event db message-bus]
   (do! message-bus (fn [s]
-                     (println "message-sent")
-                     (let [message (-> event :message m/normalize-message)
+                     (let [message (-> event :message m/normalize-data)
                            ;; TODO: This fails because recipients does not have a full contact sent.
                            id (m/conversation-id (:recipients message))
                            idx (:idx message)
@@ -54,7 +54,10 @@
 (defmethod handle-event "get-contacts"
   [event db message-bus]
   (do! message-bus (fn [s]
-                     (assoc s :contacts (misc/contacts-list->map (:contacts event))))))
+                     (let [ids (d/q '[:find [?e ...] :where [?e :contact/name]] db)
+                           retract-tx (map (fn [id] [:db.fn/retractEntity id]) ids)
+                           db (d/db-with db retract-tx)]
+                       (assoc s :db (d/db-with db (misc/contacts-list->tx (:contacts event))))))))
 
 (defn- event-handler
   [event db message-bus]
