@@ -1,5 +1,6 @@
 (ns postal-messenger.client.util.misc
   (:require [clojure.string :as str]
+            [clojure.set :as set]
             [cljs-time.core :as t]
             [cljs-time.format :as ft]
             [postal-messenger.client.util.cookie :as cookie]
@@ -115,9 +116,14 @@
                             (str (days-of-week-short d) " " (time-format)))
       :default (str (parse (ft/formatter "MM/dd/yyyy")) " " (time-format)))))
 
-(defn contacts-list->map
+(defn phone-numbers->tx
+  [nums]
+  (map (fn [m]
+         {:number/number (:number m)
+          :number/type   (:type m)}) nums))
+
+(defn contacts-list->tx
   [contacts-list]
-  (into {}
-        (mapcat (fn [m]
-                  (map (fn [num-map]
-                         [(:number num-map) m]) (:phoneNumbers m))) contacts-list)))
+  (map (fn [m]
+         {:contact/name    (:name m)
+          :contact/numbers (phone-numbers->tx (:phoneNumbers m))}) contacts-list))
