@@ -42,6 +42,7 @@
         "message-sent" (do! message-bus (fn [s]
                                           (println "message-sent")
                                           (let [message (-> evt :message m/normalize-message)
+                                                ;; TODO: This fails because recipients does not have a full contact sent.
                                                 id (m/conversation-id (:recipients message))
                                                 idx (:idx message)
                                                 _ (println "idx" idx)
