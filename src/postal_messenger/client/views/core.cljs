@@ -44,7 +44,7 @@
 (defmethod handle-event "message-sent"
   [event db message-bus]
   (do! message-bus (fn [s]
-                     (let [message (-> event :message m/normalize-data)
+                     (let [message (-> event :data m/normalize-data)
                            ;; TODO: This fails because recipients does not have a full contact sent.
                            id (m/conversation-id (:recipients message))
                            idx (:idx message)

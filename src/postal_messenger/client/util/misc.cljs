@@ -62,7 +62,7 @@
 (defn msg-text
   "Returns a text form of the message"
   [msg]
-  (:data msg))
+  (:text msg))
 
 (defn today-at
   ([hours minutes seconds millis]
