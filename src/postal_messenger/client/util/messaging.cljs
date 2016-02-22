@@ -7,7 +7,7 @@
 (defn conversation-id
   "Returns a unique id for a given set of recipients."
   [recipients]
-  (hash (sort-by hash (mapv #(select-keys % [:name :phoneNumbers]) recipients))))
+  (hash (sort-by hash recipients)))
 
 (defn time-comparator
   "Sort time by closest time first"
@@ -24,7 +24,7 @@
                          (time-comparator (get-in convs [x :last-update])
                                           (get-in convs [y :last-update])))) convs))
 
-(defn normalize-message
+(defn normalize-data
   [msg]
   (update msg :timestamp (fn [timestamp]
                            (when timestamp
