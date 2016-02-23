@@ -48,8 +48,9 @@
                            ;; TODO: This fails because recipients does not have a full contact sent.
                            id (m/conversation-id (:recipients message))
                            idx (:idx message)
-                           _ (println "idx" idx)
-                           s (assoc-in s [:conversations id :messages idx :status] "sent")]
+                           s (update-in s [:conversations id :messages idx] (fn [msg]
+                                                                              (assoc msg :status "sent"
+                                                                                         :timestamp (:timestamp message))))]
                        (assoc-in s [:conversations id :last-update] (:timestamp message))))))
 
 (defmethod handle-event "get-contacts"
