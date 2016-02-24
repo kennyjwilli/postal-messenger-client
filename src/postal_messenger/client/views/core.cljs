@@ -33,7 +33,8 @@
     (do! message-bus (fn [s]
                        (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
                              s (assoc-in s [:conversations id :recipients] recipients)]
-                         (assoc-in s [:conversations id :last-update] (:timestamp message)))))
+                         (assoc-in s [:conversations id :last-update] (:date message)))))
+    ;; TODO: db is not updated to get lastest db after get-contacts request
     (notif/notify (misc/format-recipients db recipients)
                   {:body     (misc/msg-text message)
                    :on-click (fn [n]
@@ -50,8 +51,8 @@
                            idx (:idx message)
                            s (update-in s [:conversations id :messages idx] (fn [msg]
                                                                               (assoc msg :status "sent"
-                                                                                         :timestamp (:timestamp message))))]
-                       (assoc-in s [:conversations id :last-update] (:timestamp message))))))
+                                                                                         :date (:date message))))]
+                       (assoc-in s [:conversations id :last-update] (:date message))))))
 
 (defmethod handle-event "get-contacts"
   [event db message-bus]
@@ -156,7 +157,7 @@
               [:div {:class (str "message " (when (= "sending" (:status msg)) "sending"))}
                (:text msg)]
               [:div {:class "timestamp"}
-               (let [t (:timestamp msg)]
+               (let [t (:date msg)]
                  (if t
                    (misc/format-time-message t)
                    "Sending..."))]]]))

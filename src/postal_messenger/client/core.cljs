@@ -30,21 +30,21 @@
      :conversations         {(msg/conversation-id [mary-num])
                              {:recipients  [mary-num]
                               :last-update (t/date-time 2016 2 18 8 13)
-                              :messages    [{:text      "mary message"
-                                             :type      "sent"
-                                             :timestamp (t/date-time 2016 2 10 8 12)}
-                                            {:text      "recieved mary message"
-                                             :type      "received"
-                                             :timestamp (t/date-time 2016 2 18 8 13)}]}
+                              :messages    [{:text "mary message"
+                                             :type "sent"
+                                             :date (t/date-time 2016 2 10 8 12)}
+                                            {:text "recieved mary message"
+                                             :type "received"
+                                             :date (t/date-time 2016 2 18 8 13)}]}
                              (msg/conversation-id [john-num])
                              {:recipients  [john-num]
                               :last-update (t/date-time 2016 2 12 10 55)
-                              :messages    [{:text      "first"
-                                             :type      "sent"
-                                             :timestamp (t/date-time 2016 2 12 10 54)}
-                                            {:text      "second"
-                                             :type      "received"
-                                             :timestamp (t/date-time 2016 2 12 10 55)}]}}}))
+                              :messages    [{:text "first"
+                                             :type "sent"
+                                             :date (t/date-time 2016 2 12 10 54)}
+                                            {:text "second"
+                                             :type "received"
+                                             :date (t/date-time 2016 2 12 10 55)}]}}}))
 
 (defn render-fn
   [message-bus state]

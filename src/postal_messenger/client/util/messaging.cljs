@@ -26,9 +26,9 @@
 
 (defn normalize-data
   [msg]
-  (update msg :timestamp (fn [timestamp]
-                           (when timestamp
-                             (fmt/parse (:date-hour-minute-second-ms fmt/formatters) timestamp)))))
+  (update msg :date (fn [date]
+                      (when date
+                        (fmt/parse (:date-hour-minute-second-ms fmt/formatters) date)))))
 
 (defn send-event!
   [body]
