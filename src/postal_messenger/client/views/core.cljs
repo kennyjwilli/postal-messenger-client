@@ -59,7 +59,7 @@
                      (let [ids (d/q '[:find [?e ...] :where [?e :contact/name]] db)
                            retract-tx (map (fn [id] [:db.fn/retractEntity id]) ids)
                            db (d/db-with db retract-tx)]
-                       (assoc s :db (d/db-with db (misc/contacts-list->tx (:contacts event))))))))
+                       (assoc s :db (d/db-with db (misc/contacts-list->tx (:data event))))))))
 
 (defn- event-handler
   [event db message-bus]
