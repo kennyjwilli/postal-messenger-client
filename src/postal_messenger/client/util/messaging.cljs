@@ -1,13 +1,16 @@
 (ns postal-messenger.client.util.messaging
-  (:require [postal-messenger.client.util.http :as http]))
+  (:require [postal-messenger.client.util.http :as http]
+            [cljs-uuid-utils.core :as uuid]))
 
 (defn send-event!
   ([socket_id type] (send-event! socket_id type nil))
   ([socket_id type data]
-   (http/post! "/api/message" {:dest      :phone
-                               :type      type
-                               :socket_id socket_id
-                               :data      data})))
+   (http/post! "/api/message" (merge
+                                {:id        (uuid/uuid-string (uuid/make-random-uuid))
+                                 :dest      :phone
+                                 :type      type
+                                 :socket_id socket_id}
+                                (when data {:data data})))))
 
 (defn send-message!
   [socket_id idx conv msg]
