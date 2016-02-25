@@ -18,6 +18,10 @@
 ;; HELPERS
 ;;====================================
 
+(defn scroll-messages-to-bottom
+  []
+  (js/setTimeout #(misc/scroll-to-bottom (.querySelector js/document "#message-list-container"))))
+
 (defn select-conv
   [id state]
   (assoc state :selected-conversation id))
@@ -27,7 +31,7 @@
 
 (defmethod handle-event "add-message"
   [event db message-bus]
-  (let [message (-> event :data misc/normalize-data)
+  (let [message (-> event :data misc/normalize-message)
         recipients (:recipients message)
         id (misc/conversation-id recipients)]
     (do! message-bus (fn [s]
@@ -45,7 +49,7 @@
 (defmethod handle-event "message-sent"
   [event _ message-bus]
   (do! message-bus (fn [s]
-                     (let [message (-> event :data misc/normalize-data)
+                     (let [message (-> event :data misc/normalize-message)
                            id (misc/conversation-id (:recipients message))
                            idx (:idx message)
                            s (update-in s [:conversations id :messages idx] (fn [msg]
@@ -65,6 +69,16 @@
   [event _ message-bus]
   (do! message-bus (fn [s]
                      (assoc s :conversations (misc/conv-list->map (:data event))))))
+
+(defmethod handle-event "get-conversation"
+  [event _ message-bus]
+  (let [data (:data event)]
+    (do! message-bus (fn [s]
+                       (update-in s [:conversations (misc/conversation-id (:recipients data))]
+                                  (fn [conv]
+                                    (scroll-messages-to-bottom)
+                                    (assoc conv :messages (mapv misc/normalize-message (:messages data))
+                                                :status :complete)))))))
 
 (defn- event-handler
   [event db message-bus]
@@ -96,11 +110,6 @@
                           (fn [{body :body}]
                             (connect-pusher (:message-channel body) (:api-key body) (:db s) message-bus)))
                   state))})
-
-(defn scroll-messages-to-bottom
-  []
-  (js/setTimeout #(misc/scroll-to-bottom (.querySelector js/document "#message-list-container"))))
-
 
 (defn selected-conv
   [state]
@@ -142,6 +151,8 @@
             [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
                    :key      (str "conv" id)
                    :on-click (fn []
+                               (when (= (:status conv) :empty)
+                                 (m/get-conversation! (:socket_id state) (:thread_id conv)))
                                (do! message-bus (partial select-conv id))
                                (scroll-messages-to-bottom))}
              [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
@@ -188,9 +199,14 @@
                  [:div.fit
                   [:div {:class "message-list-container"
                          :id    "message-list-container"}
-                   (let [messages (:messages conv)]
-                     (map-indexed (fn [idx msg]
-                                    (message message-bus msg idx state)) messages))]
+                   (if (= (:status conv) :complete)
+                     (let [messages (:messages conv)]
+                       (map-indexed (fn [idx msg]
+                                      (message message-bus msg idx state)) messages))
+                     [:div.layout.vertical.center-justified {:style {:height "100%"}}
+                      [:div.layout.horizontal.center-justified
+                       [:div.loaders.spinner {:style {:width  "3em"
+                                                      :height "3em"}}]]])]
                   [:div {:class "new-message-container"}
                    [:div.layout.vertical.center-justified {:style {:height "100%"}}
                     [:div.layout.horizontal

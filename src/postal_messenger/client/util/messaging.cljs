@@ -6,7 +6,7 @@
   ([socket_id type] (send-event! socket_id type nil))
   ([socket_id type data]
    (http/post! "/api/message" (merge
-                                {:id        (uuid/uuid-string (uuid/make-random-uuid))
+                                {                           ;:id        (uuid/uuid-string (uuid/make-random-uuid))
                                  :dest      :phone
                                  :type      type
                                  :socket_id socket_id}
@@ -26,3 +26,7 @@
 (defn get-conversations!
   [socket_id]
   (send-event! socket_id :get-conversations))
+
+(defn get-conversation!
+  [socket_id thread_id]
+  (send-event! socket_id :get-conversation {:thread_id thread_id}))

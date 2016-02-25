@@ -74,7 +74,7 @@
   [time-str]
   (fmt/parse (:date-hour-minute-second-ms fmt/formatters) time-str))
 
-(defn normalize-data
+(defn normalize-message
   [msg]
   (update msg :date (fn [date]
                       (when date
@@ -171,4 +171,5 @@
                                                     :last-update date
                                                     :thread_id   thread_id
                                                     :snippet     text
+                                                    :status      :empty
                                                     :messages    []}])) convs)))
