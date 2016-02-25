@@ -38,6 +38,7 @@ main {
 
   .conv-list {
     width: 300px;
+    overflow: auto;
     //position: relative;
     .conv {
       padding: 10px;
