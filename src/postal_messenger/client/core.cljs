@@ -27,7 +27,7 @@
     {:socket_id             ""
      :db                    db
      :selected-conversation nil
-     :conversations         {(msg/conversation-id [mary-num])
+     :conversations         {(misc/conversation-id [mary-num])
                              {:recipients  [mary-num]
                               :last-update (t/date-time 2016 2 18 8 13)
                               :messages    [{:text "mary message"
@@ -36,7 +36,7 @@
                                             {:text "recieved mary message"
                                              :type "received"
                                              :date (t/date-time 2016 2 18 8 13)}]}
-                             (msg/conversation-id [john-num])
+                             (misc/conversation-id [john-num])
                              {:recipients  [john-num]
                               :last-update (t/date-time 2016 2 12 10 55)
                               :messages    [{:text "first"

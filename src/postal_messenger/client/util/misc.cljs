@@ -4,7 +4,8 @@
             [cljs-time.core :as t]
             [cljs-time.format :as ft]
             [postal-messenger.client.util.cookie :as cookie]
-            [datascript.core :as d])
+            [datascript.core :as d]
+            [cljs-time.format :as fmt])
   (:import
     goog.date.Date
     goog.date.DateTime
@@ -48,6 +49,36 @@
                    :where
                    [?n :number/number ?num]
                    [?c :contact/numbers ?n]] db number)))
+
+(defn conversation-id
+  "Returns a unique id for a given set of recipients."
+  [recipients]
+  (hash (sort-by hash recipients)))
+
+(defn time-comparator
+  "Sort time by closest time first"
+  [x y]
+  (cond
+    (t/equal? x y) 0
+    (t/after? x y) -1
+    :default 1))
+
+(defn sort-conversations
+  "Sorts conversations by the newest conversation first"
+  [convs]
+  (into (sorted-map-by (fn [x y]
+                         (time-comparator (get-in convs [x :last-update])
+                                          (get-in convs [y :last-update])))) convs))
+
+(defn parse-time
+  [time-str]
+  (fmt/parse (:date-hour-minute-second-ms fmt/formatters) time-str))
+
+(defn normalize-data
+  [msg]
+  (update msg :date (fn [date]
+                      (when date
+                        (parse-time date)))))
 
 (defn format-recipients
   [db recip-list]
@@ -127,3 +158,17 @@
   (map (fn [m]
          {:contact/name    (:name m)
           :contact/numbers (phone-numbers->tx (:phoneNumbers m))}) contacts-list))
+
+(defn conv-list->map
+  [convs]
+  (apply hash-map
+         (mapcat (fn [conv]
+                   (let [recipients [(:address conv)]
+                         date (parse-time (:date conv))
+                         text (:text conv)
+                         thread_id (:thread_id conv)]
+                     [(conversation-id recipients) {:recipients  recipients
+                                                    :last-update date
+                                                    :thread_id   thread_id
+                                                    :snippet     text
+                                                    :messages    []}])) convs)))
