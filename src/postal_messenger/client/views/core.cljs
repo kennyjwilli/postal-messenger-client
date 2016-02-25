@@ -27,9 +27,9 @@
 
 (defmethod handle-event "add-message"
   [event db message-bus]
-  (let [message (-> event :data m/normalize-data)
+  (let [message (-> event :data misc/normalize-data)
         recipients (:recipients message)
-        id (m/conversation-id recipients)]
+        id (misc/conversation-id recipients)]
     (do! message-bus (fn [s]
                        (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
                              s (assoc-in s [:conversations id :recipients] recipients)]
@@ -43,11 +43,10 @@
                                (do! message-bus (partial select-conv id)))})))
 
 (defmethod handle-event "message-sent"
-  [event db message-bus]
+  [event _ message-bus]
   (do! message-bus (fn [s]
-                     (let [message (-> event :data m/normalize-data)
-                           ;; TODO: This fails because recipients does not have a full contact sent.
-                           id (m/conversation-id (:recipients message))
+                     (let [message (-> event :data misc/normalize-data)
+                           id (misc/conversation-id (:recipients message))
                            idx (:idx message)
                            s (update-in s [:conversations id :messages idx] (fn [msg]
                                                                               (assoc msg :status "sent"
@@ -61,6 +60,11 @@
                            retract-tx (map (fn [id] [:db.fn/retractEntity id]) ids)
                            db (d/db-with db retract-tx)]
                        (assoc s :db (d/db-with db (misc/contacts-list->tx (:data event))))))))
+
+(defmethod handle-event "get-conversations"
+  [event _ message-bus]
+  (do! message-bus (fn [s]
+                     (assoc s :conversations (misc/conv-list->map (:data event))))))
 
 (defn- event-handler
   [event db message-bus]
@@ -80,6 +84,7 @@
                                (s/on-value pusher-bus #(event-handler % db message-bus))
                                ;; TODO: Store contacts in localstorage
                                (m/get-contacts! socket_id)
+                               (m/get-conversations! socket_id)
                                (do! message-bus (fn [s]
                                                   (assoc s :socket_id socket_id))))))))
 
@@ -144,7 +149,7 @@
               [:div.layout.horizontal
                [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:db state) (:recipients conv))]
                [:div {:class "last-update"} (misc/format-time (:last-update conv))]]
-              [:span {:class "last-message one-line-text"} (-> conv :messages last misc/msg-text)]]]))
+              [:span {:class "last-message one-line-text"} (or (-> conv :messages last misc/msg-text) (:snippet conv) "")]]]))
 
 (rum/defc message
           [message-bus msg idx state]
@@ -178,7 +183,7 @@
                 [:div {:class "conv-list"}
                  (map (fn [[id conv]]
                         (conversation-item message-bus state id))
-                      (-> state :conversations m/sort-conversations))]
+                      (-> state :conversations misc/sort-conversations))]
                 [:div {:class "flex conv-messages"}
                  [:div.fit
                   [:div {:class "message-list-container"
