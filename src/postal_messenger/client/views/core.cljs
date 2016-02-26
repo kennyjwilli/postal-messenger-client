@@ -95,7 +95,7 @@
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
     (pusher/on-connected p (fn []
                              (let [socket_id (pusher/socket-id p)]
-                               (s/on-value pusher-bus #(event-handler % db message-bus))
+                               (s/on-value pusher-bus #(event-handler (misc/normalize-event %) db message-bus))
                                ;; TODO: Store contacts in localstorage
                                (m/get-contacts! socket_id)
                                (m/get-conversations! socket_id)

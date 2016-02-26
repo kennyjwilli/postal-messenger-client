@@ -1,6 +1,5 @@
 (ns postal-messenger.client.util.misc
   (:require [clojure.string :as str]
-            [clojure.set :as set]
             [cljs-time.core :as t]
             [cljs-time.format :as ft]
             [postal-messenger.client.util.cookie :as cookie]
@@ -173,3 +172,36 @@
                                                     :snippet     text
                                                     :status      :empty
                                                     :messages    []}])) convs)))
+
+(defn normalize
+  [structure value]
+  (if (sequential? value)
+    (mapv (partial normalize structure) value)
+    (apply hash-map
+           (mapcat (fn [[k v]]
+                     (if (contains? structure k)
+                       (let [new-k (get structure k)]
+                         (if (vector? new-k)
+                           [(first new-k) (normalize (second new-k) v)]
+                           [new-k v]))
+                       [k v])) value))))
+
+(defn normalize-event
+  [event]
+  (let [s {:d :dest
+           :t :type
+           :b [:data {:t  :type
+                      :th :thread_id
+                      :r  :recipients
+                      :d  :date
+                      :i  :idx
+                      :n  :name
+                      :a  :address
+                      :m  [:messages {:t :type
+                                      :r :recipients
+                                      :d :date
+                                      :b :text}]
+                      :p  [:numbers {:t :type
+                                     :n :number}]
+                      :b  :text}]}]
+    (normalize s event)))
