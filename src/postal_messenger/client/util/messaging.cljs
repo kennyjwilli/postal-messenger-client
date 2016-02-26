@@ -5,12 +5,11 @@
 (defn send-event!
   ([socket_id type] (send-event! socket_id type nil))
   ([socket_id type data]
-   (http/post! "/api/message" (merge
-                                {                           ;:id        (uuid/uuid-string (uuid/make-random-uuid))
-                                 :dest      :phone
-                                 :type      type
-                                 :socket_id socket_id}
-                                (when data {:data data})))))
+   (http/post! "/api/message" {:socket_id socket_id
+                               :body      (merge
+                                            {:dest :phone
+                                             :type type}
+                                            (when data {:data data}))})))
 
 (defn send-message!
   [socket_id idx conv msg]
