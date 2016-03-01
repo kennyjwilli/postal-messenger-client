@@ -156,7 +156,7 @@
   [contacts-list]
   (map (fn [m]
          {:contact/name    (:name m)
-          :contact/numbers (phone-numbers->tx (:phoneNumbers m))}) contacts-list))
+          :contact/numbers (phone-numbers->tx (:numbers m))}) contacts-list))
 
 (defn conv-list->map
   [convs]
