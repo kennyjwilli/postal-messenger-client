@@ -145,6 +145,7 @@
   {:will-update
    (fn [state]
      (let [node (.getDOMNode js/ReactDOM (:rum/react-component state))]
+       (println "scroll" (should-scroll? node))
        (assoc state ::sticky? (should-scroll? node))))
    :did-update
    (fn [state]
@@ -167,11 +168,33 @@
 ;; UI
 ;;====================================
 
+(rum/defc compose-pane
+          [message-bus state]
+          [:div {:class "new-message-container"}
+           [:div.layout.vertical.center-justified {:style {:height "100%"}}
+            [:div.layout.horizontal
+             [:span {:class           "flex"
+                     :placeholder     "Send a message"
+                     :contentEditable true
+                     :on-input        (fn [e]
+                                        ;;TODO: This should be moved into on key down when the enter key is hit.
+                                        ;;https://github.com/tonsky/datascript-chat/blob/gh-pages/src/datascript_chat/ui.cljs#L116
+                                        (do! message-bus (partial update-input-value (aget e "target" "outerText"))))
+                     :on-key-down     (fn [e]
+                                        (when (and (= 13 (aget e "keyCode"))
+                                                   (not (aget e "shiftKey")))
+                                          (.stopPropagation e)
+                                          (.preventDefault e)
+                                          (send-message! message-bus state)))}
+              (input-value state)]
+             [:div.layout.vertical.center-justified
+              [:i {:class    "zmdi zmdi-mail-send"
+                   :on-click (fn [] (send-message! message-bus state))}]]]]])
+
 (rum/defc conversation-item
           [message-bus state id]
           (let [conv (get-in state [:conversations id])]
             [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
-                   :key      (str "conv" id)
                    :on-click (fn []
                                (when (= (:status conv) :empty)
                                  (m/get-conversation! (:socket_id state) (:thread_id conv)))
@@ -183,6 +206,13 @@
                [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:db state) (:recipients conv))]
                [:div {:class "last-update"} (misc/format-time (:last-update conv))]]
               [:span {:class "last-message one-line-text"} (or (-> conv :messages last misc/msg-text) (:snippet conv) "")]]]))
+
+(rum/defc conversation-list-pane
+          [message-bus state]
+          [:div {:class "conv-list"}
+           (map (fn [[id conv]]
+                  (rum/with-key (conversation-item message-bus state id) id))
+                (-> state :conversations misc/sort-conversations))])
 
 (rum/defc message
           [message-bus msg idx state]
@@ -200,50 +230,34 @@
                    (misc/format-time-message t)
                    "Sending..."))]]]))
 
-(rum/defc root < subscribe-on-mount
+(rum/defc chat-pane
           [message-bus state]
           (let [conv (selected-conv state)]
-            [:div.layout.vertical
-             [:div.nav-bar {:style {:background-color "green"}}
-              [:div.layout.horizontal {:style {:height "100%"}}
-               [:div.flex.layout.vertical.center-justified
-                [:span.title "Postal Messenger"]]
-               [:div.layout.vertical.center-justified
-                [:div.avatar {:style {:background-image (str "url(img/dexter.jpg)")}}]]]]
-             [:main.flex
-              [:div {:class "horz-center conv-container"}
-               [:div.layout.horizontal.fit
-                [:div {:class "conv-list"}
-                 (map (fn [[id conv]]
-                        (conversation-item message-bus state id))
-                      (-> state :conversations misc/sort-conversations))]
-                [:div {:class "flex conv-messages"}
-                 [:div.fit
-                  [:div {:class "message-list-container"
-                         :id    "message-list-container"}
-                   (if (= (:status conv) :complete)
-                     (let [messages (:messages conv)]
-                       (map-indexed (fn [idx msg]
-                                      (message message-bus msg idx state)) messages))
-                     [:div.layout.vertical.center-justified {:style {:height "100%"}}
-                      [:div.layout.horizontal.center-justified
-                       [:div.loaders.spinner {:style {:width  "3em"
-                                                      :height "3em"}}]]])]
-                  [:div {:class "new-message-container"}
-                   [:div.layout.vertical.center-justified {:style {:height "100%"}}
-                    [:div.layout.horizontal
-                     [:span {:class           "flex"
-                             :placeholder     "Send a message"
-                             :contentEditable true
-                             :on-input        (fn [e]
-                                                (do! message-bus (partial update-input-value (aget e "target" "outerText"))))
-                             :on-key-down     (fn [e]
-                                                (when (and (= 13 (aget e "keyCode"))
-                                                           (not (aget e "shiftKey")))
-                                                  (.stopPropagation e)
-                                                  (.preventDefault e)
-                                                  (send-message! message-bus state)))}
-                      (input-value state)]
-                     [:div.layout.vertical.center-justified
-                      [:i {:class    "zmdi zmdi-mail-send"
-                           :on-click (fn [] (send-message! message-bus state))}]]]]]]]]]]]))
+            [:div {:class "message-list-container"
+                   :id    "message-list-container"}
+             (if (= (:status conv) :complete)
+               (let [messages (:messages conv)]
+                 (map-indexed (fn [idx msg]
+                                (rum/with-key (message message-bus msg idx state) idx)) messages))
+               [:div.layout.vertical.center-justified {:style {:height "100%"}}
+                [:div.layout.horizontal.center-justified
+                 [:div.loaders.spinner {:style {:width  "3em"
+                                                :height "3em"}}]]])]))
+
+(rum/defc root < subscribe-on-mount
+          [message-bus state]
+          [:div.layout.vertical
+           [:div.nav-bar {:style {:background-color "green"}}
+            [:div.layout.horizontal {:style {:height "100%"}}
+             [:div.flex.layout.vertical.center-justified
+              [:span.title "Postal Messenger"]]
+             [:div.layout.vertical.center-justified
+              [:div.avatar {:style {:background-image (str "url(img/dexter.jpg)")}}]]]]
+           [:main.flex
+            [:div {:class "horz-center conv-container"}
+             [:div.layout.horizontal.fit
+              (conversation-list-pane message-bus state)
+              [:div {:class "flex conv-messages"}
+               [:div.fit
+                (chat-pane message-bus state)
+                (compose-pane message-bus state)]]]]]])
