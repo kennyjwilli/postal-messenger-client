@@ -102,15 +102,6 @@
                                (do! message-bus (fn [s]
                                                   (assoc s :socket_id socket_id))))))))
 
-(def subscribe-on-mount
-  {:did-mount (fn [state]
-                (let [message-bus (-> state :rum/args first)
-                      s (-> state :rum/args second)]
-                  (p/then (http/get! "/api/pusher")
-                          (fn [{body :body}]
-                            (connect-pusher (:message-channel body) (:api-key body) (:db s) message-bus)))
-                  state))})
-
 (defn selected-conv
   [state]
   (get-in state [:conversations (:selected-conversation state)]))
@@ -140,6 +131,37 @@
       (do! message-bus (partial update-input-value ""))
       (scroll-messages-to-bottom)
       (m/send-message! socket_id idx conv value))))
+
+;;====================================
+;; Mixins
+;;====================================
+
+(defn- should-scroll? [node]
+  (<=
+    (- (.-scrollHeight node) (.-scrollTop node) (.-offsetHeight node))
+    0))
+
+(def sticky-mixin
+  {:will-update
+   (fn [state]
+     (let [node (.getDOMNode js/ReactDOM (:rum/react-component state))]
+       (assoc state ::sticky? (should-scroll? node))))
+   :did-update
+   (fn [state]
+     (when (::sticky? state)
+       (let [node (.getDOMNode js/ReactDOM (:rum/react-component state))]
+         (set! (.-scrollTop node) (.-scrollHeight node))))
+     state)})
+
+(def subscribe-on-mount
+  {:did-mount (fn [state]
+                (let [message-bus (-> state :rum/args first)
+                      s (-> state :rum/args second)]
+                  (p/then (http/get! "/api/pusher")
+                          (fn [{body :body}]
+                            (connect-pusher (:message-channel body) (:api-key body) (:db s) message-bus)))
+                  state))})
+
 
 ;;====================================
 ;; UI
@@ -216,11 +238,11 @@
                              :on-input        (fn [e]
                                                 (do! message-bus (partial update-input-value (aget e "target" "outerText"))))
                              :on-key-down     (fn [e]
-                                                (when (= 13 (aget e "keyCode"))
-                                                  (when-not (aget e "shiftKey")
-                                                    (.stopPropagation e)
-                                                    (.preventDefault e)
-                                                    (send-message! message-bus state))))}
+                                                (when (and (= 13 (aget e "keyCode"))
+                                                           (not (aget e "shiftKey")))
+                                                  (.stopPropagation e)
+                                                  (.preventDefault e)
+                                                  (send-message! message-bus state)))}
                       (input-value state)]
                      [:div.layout.vertical.center-justified
                       [:i {:class    "zmdi zmdi-mail-send"
