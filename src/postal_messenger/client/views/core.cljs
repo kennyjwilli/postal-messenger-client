@@ -18,10 +18,6 @@
 ;; HELPERS
 ;;====================================
 
-(defn scroll-messages-to-bottom
-  []
-  (js/setTimeout #(misc/scroll-to-bottom (.querySelector js/document "#message-list-container"))))
-
 (defn select-conv
   [id state]
   (assoc state :selected-conversation id))
@@ -76,7 +72,6 @@
     (do! message-bus (fn [s]
                        (update-in s [:conversations (misc/conversation-id (:recipients data))]
                                   (fn [conv]
-                                    (scroll-messages-to-bottom)
                                     (assoc conv :messages (mapv misc/normalize-message (:messages data))
                                                 :status :complete)))))))
 
@@ -129,7 +124,6 @@
                                                           :status "sending"})))]
                            (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
       (do! message-bus (partial update-input-value ""))
-      (scroll-messages-to-bottom)
       (m/send-message! socket_id idx conv value))))
 
 ;;====================================
@@ -144,13 +138,12 @@
 (def sticky-mixin
   {:will-update
    (fn [state]
-     (let [node (.getDOMNode js/ReactDOM (:rum/react-component state))]
-       (println "scroll" (should-scroll? node))
+     (let [node (js/ReactDOM.findDOMNode (:rum/react-component state))]
        (assoc state ::sticky? (should-scroll? node))))
    :did-update
    (fn [state]
      (when (::sticky? state)
-       (let [node (.getDOMNode js/ReactDOM (:rum/react-component state))]
+       (let [node (js/ReactDOM.findDOMNode (:rum/react-component state))]
          (set! (.-scrollTop node) (.-scrollHeight node))))
      state)})
 
@@ -198,8 +191,7 @@
                    :on-click (fn []
                                (when (= (:status conv) :empty)
                                  (m/get-conversation! (:socket_id state) (:thread_id conv)))
-                               (do! message-bus (partial select-conv id))
-                               (scroll-messages-to-bottom))}
+                               (do! message-bus (partial select-conv id)))}
              [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
              [:div
               [:div.layout.horizontal
@@ -230,7 +222,7 @@
                    (misc/format-time-message t)
                    "Sending..."))]]]))
 
-(rum/defc chat-pane
+(rum/defc chat-pane < sticky-mixin
           [message-bus state]
           (let [conv (selected-conv state)]
             [:div {:class "message-list-container"
