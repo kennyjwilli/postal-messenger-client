@@ -25,6 +25,7 @@
                         :contact/name    "John Example"
                         :contact/numbers [{:number/number john-num :number/type "Mobile"}]}])]
     {:socket_id             ""
+     :compose-pane-h        "50px"
      :db                    db
      :selected-conversation nil
      :conversations         {(misc/conversation-id [mary-num])

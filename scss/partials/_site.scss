@@ -12,6 +12,13 @@ main {
   padding-right: $main-spacing;
 }
 
+textarea {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  display: block;
+}
+
 [contenteditable=true]:empty:before {
   content: attr(placeholder);
   display: block;
@@ -27,9 +34,12 @@ main {
   margin-bottom: 16px;
 }
 
+$pane-height: 480px;
+$compose-pane-height: 50px;
+
 .conv-container {
   @extend .card;
-  min-height: 400px;
+  height: $pane-height;
   max-width: 950px;
   width: 100%;
   position: relative;
@@ -64,7 +74,7 @@ main {
       top: 0;
       left: 0;
       right: 0;
-      bottom: 49px;
+      bottom: $compose-pane-height;
       overflow: auto;
       .message-row {
         @extend .horizontal.layout;
@@ -123,6 +133,17 @@ main {
       position: absolute;
       border-top: 1px solid rgba(0, 0, 0, 0.14);
       background-color: white;
+      height: 40px;
+
+      textarea {
+        resize: none;
+        width: 100%;
+        height: 100%;
+        border: 2px solid #E0E0E0;
+        border-radius: 6px;
+        padding: 9px 8px 9px 8px;
+        outline: none;
+      }
 
       span[contenteditable=true] {
         padding: 5px;

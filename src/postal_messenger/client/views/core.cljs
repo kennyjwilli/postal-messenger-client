@@ -110,21 +110,20 @@
   (assoc-in state [:conversations (:selected-conversation state) :input-value] v))
 
 (defn send-message!
-  [message-bus state]
+  [message-bus state text]
   (when-not (str/blank? (input-value state))
     (let [socket_id (:socket_id state)
           conv (selected-conv state)
-          idx (-> conv :messages count)
-          value (input-value state)]
+          idx (-> conv :messages count)]
       (do! message-bus (fn [s]
                          (let [s (update-in s [:conversations (:selected-conversation state) :messages]
                                             (fn [msgs]
                                               (conj msgs {:type   "sent"
-                                                          :text   value
+                                                          :text   text
                                                           :status "sending"})))]
                            (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
       (do! message-bus (partial update-input-value ""))
-      (m/send-message! socket_id idx conv value))))
+      (m/send-message! socket_id idx conv text))))
 
 ;;====================================
 ;; Mixins
@@ -161,24 +160,54 @@
 ;; UI
 ;;====================================
 
-(rum/defc compose-pane
-          [message-bus state]
-          [:div {:class "new-message-container"}
-           [:div.layout.vertical.center-justified {:style {:height "100%"}}
-            ;; TODO: Change this to a textarea. Look at slack's textarea for an example
-            [:span {:placeholder     "Send a message"
-                    :contentEditable true
-                    :on-input        (fn [e]
-                                       ;;TODO: This should be moved into on key down when the enter key is hit.
-                                       ;;https://github.com/tonsky/datascript-chat/blob/gh-pages/src/datascript_chat/ui.cljs#L116
-                                       (do! message-bus (partial update-input-value (aget e "target" "outerText"))))
-                    :on-key-down     (fn [e]
-                                       (when (and (= 13 (aget e "keyCode"))
-                                                  (not (aget e "shiftKey")))
-                                         (.stopPropagation e)
-                                         (.preventDefault e)
-                                         (send-message! message-bus state)))}
-             (input-value state)]]])
+(rum/defcs compose-pane < (rum/local nil)
+           [s message-bus state]
+           (let [local (:rum/local s)]
+             [:div {:class "new-message-container"
+                    :style (when @local {:height @local})}
+              [:textarea {:id          "compose-area"
+                          :autofocus   true
+                          :on-input    (fn [e]
+                                         ;; This is for an auto expanding textarea
+                                         (let [elem (aget e "target")]
+
+                                           (doto elem
+                                             (aset "style" "height" "")
+                                             (aset "style" "height" (let [scroll (aget elem "scrollHeight")
+                                                                          h (aget elem "clientHeight")
+                                                                          _ (println scroll h)
+                                                                          calc (js/Math.min scroll 85)]
+                                                                      (str calc "px"))))
+                                           (println (aget elem "style" "height"))
+                                           ;(reset! local (aget elem "style" "height"))
+                                           #_(do! message-bus #(assoc % :compose-pane-h (aget elem "parentNode" "offsetHeight")))))
+                          :on-key-down (fn [e]
+                                         #_(let [elem (aget e "target")]
+                                             (doto elem
+                                               (aset "style" "height" "")
+                                               (aset "style" "height" (str (js/Math.min (aget elem "scrollHeight"), 85) "px"))))
+                                         (let [value (aget e "target" "value")]
+                                           (when (and (= 13 (aget e "keyCode"))
+                                                      (not (aget e "shiftKey"))
+                                                      (not (str/blank? value)))
+                                             (.stopPropagation e)
+                                             (.preventDefault e)
+                                             (send-message! message-bus state value))))}]
+              #_[:div.layout.vertical.center-justified {:style {:height "100%"}}
+                 ;; TODO: Change this to a textarea. Look at slack's textarea for an example
+
+                 #_[:span {:placeholder     "Send a message"
+                           :contentEditable true
+                           :on-input        (fn [e]
+                                              ;;TODO: This should be moved into on key down when the enter key is hit.
+                                              ;;https://github.com/tonsky/datascript-chat/blob/gh-pages/src/datascript_chat/ui.cljs#L116
+                                              (do! message-bus (partial update-input-value (aget e "target" "outerText"))))
+                           :on-key-down     (fn [e]
+                                              (when (and (= 13 (aget e "keyCode"))
+                                                         (not (aget e "shiftKey")))
+                                                (.stopPropagation e)
+                                                (.preventDefault e)))}
+                    (input-value state)]]]))
 
 (rum/defc conversation-item
           [message-bus state id]
@@ -222,7 +251,8 @@
           [message-bus state]
           (let [conv (selected-conv state)]
             [:div {:class "message-list-container"
-                   :id    "message-list-container"}
+                   :id    "message-list-container"
+                   :style {:bottom (:compose-pane-h state)}}
              (if (= (:status conv) :complete)
                (let [messages (:messages conv)]
                  (map-indexed (fn [idx msg]
