@@ -180,32 +180,13 @@
                                                ;(reset! local (aget elem "style" "height"))
                                                #_(do! message-bus #(assoc % :compose-pane-h (aget elem "parentNode" "offsetHeight")))))
                           :on-key-down (fn [e]
-                                         #_(let [elem (aget e "target")]
-                                             (doto elem
-                                               (aset "style" "height" "")
-                                               (aset "style" "height" (str (js/Math.min (aget elem "scrollHeight"), 85) "px"))))
                                          (let [value (aget e "target" "value")]
                                            (when (and (= 13 (aget e "keyCode"))
-                                                      (not (aget e "shiftKey"))
-                                                      (not (str/blank? value)))
+                                                      (not (aget e "shiftKey")))
                                              (.stopPropagation e)
                                              (.preventDefault e)
-                                             (send-message! message-bus state value))))}]
-              #_[:div.layout.vertical.center-justified {:style {:height "100%"}}
-                 ;; TODO: Change this to a textarea. Look at slack's textarea for an example
-
-                 #_[:span {:placeholder     "Send a message"
-                           :contentEditable true
-                           :on-input        (fn [e]
-                                              ;;TODO: This should be moved into on key down when the enter key is hit.
-                                              ;;https://github.com/tonsky/datascript-chat/blob/gh-pages/src/datascript_chat/ui.cljs#L116
-                                              (do! message-bus (partial update-input-value (aget e "target" "outerText"))))
-                           :on-key-down     (fn [e]
-                                              (when (and (= 13 (aget e "keyCode"))
-                                                         (not (aget e "shiftKey")))
-                                                (.stopPropagation e)
-                                                (.preventDefault e)))}
-                    (input-value state)]]]))
+                                             (when (not (str/blank? value))
+                                               (send-message! message-bus state value)))))}]]))
 
 (rum/defc conversation-item
           [message-bus state id]
