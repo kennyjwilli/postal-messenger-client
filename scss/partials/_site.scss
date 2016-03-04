@@ -55,9 +55,21 @@ $compose-pane-height: 50px;
       &.selected {
         background-color: darken($bg-color, 10%);
       }
-      .avatar {
+      .contact-icon {
+        $size: 35px;
         float: left;
         margin-right: 12px;
+        &.no-photo {
+          width: $size;
+          height: $size;
+          display: inline-block;
+          line-height: $size;
+          border-radius: 50%;
+          font-size: 16px;
+          color: white;
+          text-align: center;
+          background: blue;
+        }
       }
       .last-message {
         //float: left;

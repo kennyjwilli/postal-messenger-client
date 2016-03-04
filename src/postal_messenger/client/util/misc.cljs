@@ -49,6 +49,11 @@
                    [?n :number/number ?num]
                    [?c :contact/numbers ?n]] db number)))
 
+(defn initials
+  [name]
+  (let [split (str/split name " ")]
+    (map first split)))
+
 (defn conversation-id
   "Returns a unique id for a given set of recipients."
   [recipients]

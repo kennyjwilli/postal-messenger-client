@@ -200,7 +200,12 @@
                                (when (= (:status conv) :empty)
                                  (m/get-conversation! (:socket_id state) (:thread_id conv)))
                                (do! message-bus (partial select-conv id)))}
-             [:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
+             #_[:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
+             [:div {:class "contact-icon no-photo"}
+              (let [c (misc/contact-from-number (first (:recipients conv)) (:db state))]
+                (if c
+                  (str/join "" (take 2 (misc/initials (:contact/name c))))
+                  "#"))]
              [:div
               [:div.layout.horizontal
                [:div.flex {:class "conv-title one-line-text"} (misc/format-recipients (:db state) (:recipients conv))]
