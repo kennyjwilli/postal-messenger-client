@@ -74,7 +74,7 @@ $compose-pane-height: 50px;
       top: 0;
       left: 0;
       right: 0;
-      bottom: $compose-pane-height;
+      bottom: 78px;
       overflow: auto;
       .message-row {
         @extend .horizontal.layout;
@@ -133,7 +133,7 @@ $compose-pane-height: 50px;
       position: absolute;
       border-top: 1px solid rgba(0, 0, 0, 0.14);
       background-color: white;
-      height: 40px;
+      height: 58px;
 
       textarea {
         resize: none;

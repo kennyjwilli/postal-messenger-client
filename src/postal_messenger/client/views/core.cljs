@@ -163,24 +163,22 @@
 (rum/defcs compose-pane < (rum/local nil)
            [s message-bus state]
            (let [local (:rum/local s)]
-             [:div {:class "new-message-container"
-                    :style (when @local {:height @local})}
+             [:div {:class "new-message-container"}
               [:textarea {:id          "compose-area"
                           :autofocus   true
-                          :on-input    (fn [e]
-                                         ;; This is for an auto expanding textarea
-                                         (let [elem (aget e "target")]
+                          #_:on-input    #_(fn [e]
+                                             ;; This is for an auto expanding textarea
+                                             (let [elem (aget e "target")]
 
-                                           (doto elem
-                                             (aset "style" "height" "")
-                                             (aset "style" "height" (let [scroll (aget elem "scrollHeight")
-                                                                          h (aget elem "clientHeight")
-                                                                          _ (println scroll h)
-                                                                          calc (js/Math.min scroll 85)]
-                                                                      (str calc "px"))))
-                                           (println (aget elem "style" "height"))
-                                           ;(reset! local (aget elem "style" "height"))
-                                           #_(do! message-bus #(assoc % :compose-pane-h (aget elem "parentNode" "offsetHeight")))))
+                                               (doto elem
+                                                 (aset "style" "height" "")
+                                                 (aset "style" "height" (let [scroll (aget elem "scrollHeight")
+                                                                              h (aget elem "clientHeight")
+                                                                              _ (println scroll h)
+                                                                              calc (js/Math.min scroll 85)]
+                                                                          (str calc "px"))))
+                                               ;(reset! local (aget elem "style" "height"))
+                                               #_(do! message-bus #(assoc % :compose-pane-h (aget elem "parentNode" "offsetHeight")))))
                           :on-key-down (fn [e]
                                          #_(let [elem (aget e "target")]
                                              (doto elem
@@ -251,8 +249,7 @@
           [message-bus state]
           (let [conv (selected-conv state)]
             [:div {:class "message-list-container"
-                   :id    "message-list-container"
-                   :style {:bottom (:compose-pane-h state)}}
+                   :id    "message-list-container"}
              (if (= (:status conv) :complete)
                (let [messages (:messages conv)]
                  (map-indexed (fn [idx msg]
