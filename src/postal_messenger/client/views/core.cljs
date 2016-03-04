@@ -64,7 +64,10 @@
 (defmethod handle-event "get-conversations"
   [event _ message-bus]
   (do! message-bus (fn [s]
-                     (assoc s :conversations (misc/conv-list->map (:data event))))))
+                     (let [convs (misc/conv-list->map (:data event))
+                           #_sorted #_(misc/sort-conversations convs)
+                           #_newest #_(-> sorted vec ffirst)]
+                       (assoc s :conversations convs)))))
 
 (defmethod handle-event "get-conversation"
   [event _ message-bus]
@@ -160,9 +163,11 @@
 
 (rum/defcs compose-pane < (rum/local nil)
            [s message-bus state]
-           (let [local (:rum/local s)]
+           (let [local (:rum/local s)
+                 conv (selected-conv state)]
              [:div {:class "new-message-container"}
               [:textarea {:id          "compose-area"
+                          :disabled    (or (nil? conv) (empty? (:messages conv)))
                           :autofocus   true
                           #_:on-input    #_(fn [e]
                                              ;; This is for an auto expanding textarea
@@ -225,6 +230,11 @@
                    (misc/format-time-message t)
                    "Sending..."))]]]))
 
+(rum/defc spinner < rum/static
+          []
+          [:div.loaders.spinner {:style {:width  "3em"
+                                         :height "3em"}}])
+
 (rum/defc chat-pane < sticky-mixin
           [message-bus state]
           (let [conv (selected-conv state)]
@@ -236,8 +246,9 @@
                                 (rum/with-key (message message-bus msg idx state) idx)) messages))
                [:div.layout.vertical.center-justified {:style {:height "100%"}}
                 [:div.layout.horizontal.center-justified
-                 [:div.loaders.spinner {:style {:width  "3em"
-                                                :height "3em"}}]]])]))
+                 (if conv
+                   (spinner)
+                   [:span "Select a conversation :)"])]])]))
 
 (rum/defc root < subscribe-on-mount
           [message-bus state]
