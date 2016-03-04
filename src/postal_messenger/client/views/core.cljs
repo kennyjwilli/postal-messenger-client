@@ -111,19 +111,17 @@
 
 (defn send-message!
   [message-bus state text]
-  (when-not (str/blank? (input-value state))
-    (let [socket_id (:socket_id state)
-          conv (selected-conv state)
-          idx (-> conv :messages count)]
-      (do! message-bus (fn [s]
-                         (let [s (update-in s [:conversations (:selected-conversation state) :messages]
-                                            (fn [msgs]
-                                              (conj msgs {:type   "sent"
-                                                          :text   text
-                                                          :status "sending"})))]
-                           (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
-      (do! message-bus (partial update-input-value ""))
-      (m/send-message! socket_id idx conv text))))
+  (let [socket_id (:socket_id state)
+        conv (selected-conv state)
+        idx (-> conv :messages count)]
+    (do! message-bus (fn [s]
+                       (let [s (update-in s [:conversations (:selected-conversation state) :messages]
+                                          (fn [msgs]
+                                            (conj msgs {:type   "sent"
+                                                        :text   text
+                                                        :status "sending"})))]
+                         (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
+    (m/send-message! socket_id idx conv text)))
 
 ;;====================================
 ;; Mixins
@@ -186,7 +184,8 @@
                                              (.stopPropagation e)
                                              (.preventDefault e)
                                              (when (not (str/blank? value))
-                                               (send-message! message-bus state value)))))}]]))
+                                               (send-message! message-bus state value)
+                                               (aset (aget e "target") "value" "")))))}]]))
 
 (rum/defc conversation-item
           [message-bus state id]
