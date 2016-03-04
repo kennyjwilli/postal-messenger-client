@@ -1,6 +1,5 @@
 (ns postal-messenger.client.util.messaging
-  (:require [postal-messenger.client.util.http :as http]
-            [cljs-uuid-utils.core :as uuid]))
+  (:require [postal-messenger.client.util.http :as http]))
 
 (defn send-event!
   ([socket_id type] (send-event! socket_id type nil))
