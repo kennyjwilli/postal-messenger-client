@@ -161,6 +161,11 @@
 ;; UI
 ;;====================================
 
+(rum/defc spinner < rum/static
+          []
+          [:div.loaders.spinner {:style {:width  "3em"
+                                         :height "3em"}}])
+
 (rum/defcs compose-pane < (rum/local nil)
            [s message-bus state]
            (let [local (:rum/local s)
@@ -235,11 +240,6 @@
                    (misc/format-time-message t)
                    "Sending..."))]]]))
 
-(rum/defc spinner < rum/static
-          []
-          [:div.loaders.spinner {:style {:width  "3em"
-                                         :height "3em"}}])
-
 (rum/defc chat-pane < sticky-mixin
           [message-bus state]
           (let [conv (selected-conv state)]
@@ -255,6 +255,24 @@
                    (spinner)
                    [:span "Select a conversation :)"])]])]))
 
+(rum/defc messenger-pane
+          [message-bus state]
+          [:div.layout.horizontal.fit
+           (conversation-list-pane message-bus state)
+           [:div {:class "flex conv-messages"}
+            [:div.fit
+             (chat-pane message-bus state)
+             (compose-pane message-bus state)]]])
+
+(rum/defc loading-messenger-pane
+          []
+          [:div.layout.vertical.center-justified {:style {:height "100%"}}
+           [:div.layout.horizontal.center-justified
+            [:div.layout.vertical
+             [:div.layout.horizontal.center-justified
+              (spinner)]
+             [:span "Loading your messages"]]]])
+
 (rum/defc root < subscribe-on-mount
           [message-bus state]
           [:div.layout.vertical
@@ -266,9 +284,6 @@
               [:div.avatar {:style {:background-image (str "url(img/dexter.jpg)")}}]]]]
            [:main.flex
             [:div {:class "horz-center conv-container"}
-             [:div.layout.horizontal.fit
-              (conversation-list-pane message-bus state)
-              [:div {:class "flex conv-messages"}
-               [:div.fit
-                (chat-pane message-bus state)
-                (compose-pane message-bus state)]]]]]])
+             (if (:conversations state)
+               (messenger-pane message-bus state)
+               (loading-messenger-pane))]]])
