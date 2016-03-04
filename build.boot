@@ -47,3 +47,14 @@
                  :line-numbers true
                  :source-maps true)
            (cljs)))
+
+(deftask prod-build
+         []
+         (comp
+           (asset-paths :asset-paths #{"html" "bower_components"})
+           (sass :sass-file "main.scss"
+                 :output-dir "styles"
+                 :line-numbers false
+                 :source-maps false
+                 :output-style "compressed")
+           (cljs :optimizations :advanced)))
