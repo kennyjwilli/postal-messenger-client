@@ -26,21 +26,20 @@
                          (:type evt)))
 
 (defmethod handle-event "add-message"
-  [event db message-bus]
+  [event _ message-bus]
   (let [message (-> event :data misc/normalize-message)
         recipients (:recipients message)
         id (misc/conversation-id recipients)]
     (do! message-bus (fn [s]
                        (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
                              s (assoc-in s [:conversations id :recipients] recipients)]
-                         (assoc-in s [:conversations id :last-update] (:date message)))))
-    ;; TODO: db is not updated to get lastest db after get-contacts request
-    (notif/notify (misc/format-recipients db recipients)
-                  {:body     (misc/msg-text message)
-                   :on-click (fn [n]
-                               (notif/close n)
-                               (.focus js/window)
-                               (do! message-bus (partial select-conv id)))})))
+                         (notif/notify (misc/format-recipients (:db s) recipients)
+                                       {:body     (misc/msg-text message)
+                                        :on-click (fn [n]
+                                                    (notif/close n)
+                                                    (.focus js/window)
+                                                    (do! message-bus (partial select-conv id)))})
+                         (assoc-in s [:conversations id :last-update] (:date message)))))))
 
 (defmethod handle-event "message-sent"
   [event _ message-bus]
