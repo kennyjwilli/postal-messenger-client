@@ -152,13 +152,13 @@
      state)})
 
 (def init-pusher
-  {:did-mount (fn [state]
-                (let [message-bus (-> state :rum/args first)
-                      s (-> state :rum/args second)]
-                  (p/then (http/get! "/api/pusher")
-                          (fn [{body :body}]
-                            (connect-pusher (:message-channel body) (:api-key body) (:db s) message-bus)))
-                  state))})
+  {:will-mount (fn [state]
+                 (let [message-bus (-> state :rum/args first)
+                       s (-> state :rum/args second)]
+                   (p/then (http/get! "/api/pusher")
+                           (fn [{body :body}]
+                             (connect-pusher (:message-channel body) (:api-key body) (:db s) message-bus)))
+                   state))})
 
 
 ;;====================================
