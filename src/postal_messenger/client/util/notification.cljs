@@ -7,6 +7,7 @@
   (some? notification))
 
 (defn request-permission
+  "Requests permission to show notifications. Result types: denied, default, granted"
   [callback]
   (.. notification requestPermission (then (fn [result]
                                              (callback (keyword result))))))
