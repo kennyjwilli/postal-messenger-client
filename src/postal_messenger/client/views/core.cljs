@@ -18,9 +18,13 @@
 ;; HELPERS
 ;;====================================
 
-(defn select-conv
-  [id state]
-  (assoc state :selected-conversation id))
+(defn select-conv!
+  [id state message-bus]
+  (let [conv (get-in state [:conversations id])]
+    (when (= (:status conv) :empty)
+      (m/get-conversation! (:socket_id state) (:thread_id conv))))
+  (do! message-bus (fn [s]
+                     (assoc s :selected-conversation id))))
 
 (defmulti handle-event (fn [evt]
                          (:type evt)))
@@ -38,7 +42,7 @@
                                         :on-click (fn [n]
                                                     (notif/close n)
                                                     (.focus js/window)
-                                                    (do! message-bus (partial select-conv id)))})
+                                                    (select-conv! id s message-bus))})
                          (assoc-in s [:conversations id :last-update] (:date message)))))))
 
 (defmethod handle-event "message-sent"
@@ -201,9 +205,7 @@
           (let [conv (get-in state [:conversations id])]
             [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
                    :on-click (fn []
-                               (when (= (:status conv) :empty)
-                                 (m/get-conversation! (:socket_id state) (:thread_id conv)))
-                               (do! message-bus (partial select-conv id)))}
+                               (select-conv! id state message-bus))}
              #_[:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
              [:div {:class "contact-icon no-photo"}
               (let [c (misc/contact-from-number (first (:recipients conv)) (:db state))]
