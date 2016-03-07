@@ -275,20 +275,24 @@
               (spinner)]
              [:span "Loading your messages"]]]])
 
-(rum/defcs root < init-pusher (rum/local (and (notif/support-notifications?)
-                                              (not (notif/has-permission?))) :show-notif-req?)
+(rum/defcs request-permission-bar < (rum/local (and (notif/support-notifications?)
+                                                    (not (notif/has-permission?))) :show-notif-req?)
+           [cstate]
+           (let [show? (:show-notif-req? cstate)]
+             (when @show?
+               [:div {:class "request-permission layout vertical center-justified"}
+                [:div.content
+                 [:div.layout.horizontal
+                  [:div.flex
+                   [:span "Enable desktop notifications by clicking "]
+                   [:a {:on-click #(notif/request-permission (fn [c]
+                                                               (reset! show? false)))} "here"]]
+                  [:div.close {:on-click #(reset! show? false)} "X"]]]])))
+
+(rum/defcs root < init-pusher
            [cstate message-bus state]
            [:div.layout.vertical
-            (let [show? (:show-notif-req? cstate)]
-              (when @show?
-                [:div {:class "request-permission layout vertical center-justified"}
-                 [:div.content
-                  [:div.layout.horizontal
-                   [:div.flex
-                    [:span "Enable desktop notifications by clicking "]
-                    [:a {:on-click #(notif/request-permission (fn [c]
-                                                                (reset! show? false)))} "here"]]
-                   [:div.close {:on-click #(reset! show? false)} "X"]]]]))
+            (request-permission-bar)
             [:div.nav-bar {:style {:background-color "green"}}
              [:div.layout.horizontal {:style {:height "100%"}}
               [:div.flex.layout.vertical.center-justified
