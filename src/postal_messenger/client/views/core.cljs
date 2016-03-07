@@ -151,7 +151,7 @@
          (set! (.-scrollTop node) (.-scrollHeight node))))
      state)})
 
-(def subscribe-on-mount
+(def init-pusher
   {:did-mount (fn [state]
                 (let [message-bus (-> state :rum/args first)
                       s (-> state :rum/args second)]
@@ -275,11 +275,12 @@
               (spinner)]
              [:span "Loading your messages"]]]])
 
-(rum/defcs root < (rum/local true :show-notif-req?)
+(rum/defcs root < init-pusher (rum/local (and (notif/support-notifications?)
+                                              (not (notif/has-permission?))) :show-notif-req?)
            [cstate message-bus state]
            [:div.layout.vertical
             (let [show? (:show-notif-req? cstate)]
-              (when (and @show? (notif/support-notifications?) (not (notif/has-permission?)))
+              (when @show?
                 [:div {:class "request-permission layout vertical center-justified"}
                  [:div.content
                   [:div.layout.horizontal
