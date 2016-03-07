@@ -37,12 +37,13 @@
     (do! message-bus (fn [s]
                        (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
                              s (assoc-in s [:conversations id :recipients] recipients)]
-                         (notif/notify (misc/format-recipients (:db s) recipients)
-                                       {:body     (misc/msg-text message)
-                                        :on-click (fn [n]
-                                                    (notif/close n)
-                                                    (.focus js/window)
-                                                    (select-conv! id s message-bus))})
+                         (when (notif/has-permission?)
+                           (notif/notify (misc/format-recipients (:db s) recipients)
+                                         {:body     (misc/msg-text message)
+                                          :on-click (fn [n]
+                                                      (notif/close n)
+                                                      (.focus js/window)
+                                                      (select-conv! id s message-bus))}))
                          (assoc-in s [:conversations id :last-update] (:date message)))))))
 
 (defmethod handle-event "message-sent"
@@ -274,17 +275,27 @@
               (spinner)]
              [:span "Loading your messages"]]]])
 
-(rum/defc root < subscribe-on-mount
-          [message-bus state]
-          [:div.layout.vertical
-           [:div.nav-bar {:style {:background-color "green"}}
-            [:div.layout.horizontal {:style {:height "100%"}}
-             [:div.flex.layout.vertical.center-justified
-              [:span.title "Postal Messenger"]]
-             [:div.layout.vertical.center-justified
-              [:div.avatar {:style {:background-image (str "url(img/dexter.jpg)")}}]]]]
-           [:main.flex
-            [:div {:class "horz-center conv-container"}
-             (if (:conversations state)
-               (messenger-pane message-bus state)
-               (loading-messenger-pane))]]])
+(rum/defcs root < (rum/local true :show-notif-req?)
+           [cstate message-bus state]
+           [:div.layout.vertical
+            (let [show? (:show-notif-req? cstate)]
+              (when (and @show? (notif/support-notifications?) (not (notif/has-permission?)))
+                [:div {:class "request-permission layout vertical center-justified"}
+                 [:div.content
+                  [:div.layout.horizontal
+                   [:div.flex
+                    [:span "Enable desktop notifications by clicking "]
+                    [:a {:on-click #(notif/request-permission (fn [c]
+                                                                (reset! show? false)))} "here"]]
+                   [:div.close {:on-click #(reset! show? false)} "X"]]]]))
+            [:div.nav-bar {:style {:background-color "green"}}
+             [:div.layout.horizontal {:style {:height "100%"}}
+              [:div.flex.layout.vertical.center-justified
+               [:span.title "Postal Messenger"]]
+              [:div.layout.vertical.center-justified
+               [:div.avatar {:style {:background-image (str "url(img/dexter.jpg)")}}]]]]
+            [:main.flex
+             [:div {:class "horz-center conv-container"}
+              (if (:conversations state)
+                (messenger-pane message-bus state)
+                (loading-messenger-pane))]]])

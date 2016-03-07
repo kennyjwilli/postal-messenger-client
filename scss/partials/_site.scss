@@ -37,6 +37,22 @@ textarea {
 $pane-height: 480px;
 $compose-pane-height: 50px;
 
+.request-permission {
+  height: 30px;
+  a {
+    cursor: pointer;
+    text-decoration: underline;
+    text-transform: uppercase;
+  }
+  .content {
+    margin-left: 15px;
+  }
+  .close {
+    cursor: pointer;
+    margin-right: 15px;
+  }
+}
+
 .conv-container {
   @extend .card;
   height: $pane-height;
