@@ -12,7 +12,7 @@
   [payload]
   (-> payload clj->js js/JSON.stringify))
 
-(defmulti decode-resp (fn [resp] (-> resp (get-in [:headers "Content-Type"]) (str/split ";") first)))
+(defmulti decode-resp (fn [resp] (-> resp (get-in [:headers "content-type"]) (str/split ";") first)))
 
 (defmethod decode-resp :default
   [resp]

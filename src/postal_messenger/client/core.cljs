@@ -22,7 +22,7 @@
 
 (defn ^:export main
   []
-  (let [jwt "" #_(misc/get-jwt)]
+  (let [jwt (misc/get-jwt)]
     (if (nil? jwt)
       (let [current-url (url (misc/get-url))
             login-url (assoc current-url :path "/login.html"

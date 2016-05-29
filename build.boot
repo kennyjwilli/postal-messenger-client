@@ -2,7 +2,7 @@
 (def version "0.1.0-SNAPSHOT")
 
 (set-env!
-  :resource-paths #{"src" "test" "scss"}
+  :resource-paths #{"src" "test" "scss" "html" "node_modules"}
   :dependencies '[[adzerk/boot-cljs "1.7.228-1" :scope "test"]
                   [adzerk/boot-cljs-repl "0.3.0" :scope "test"]
                   [com.cemerick/piggieback "0.2.1" :scope "test"]
@@ -52,23 +52,21 @@
          "Developer workflow for web-component UX."
          []
          (comp
-           (asset-paths :asset-paths #{"html" "bower_components"})
            (serve :dir "target/")
            (watch)
            (cljs-repl)
-           (checkout :dependencies [['pusher "0.1.0-SNAPSHOT"]])
            (speak)
            (reload)
            (sass :sass-file "main.scss"
                  :output-dir "styles"
                  :line-numbers true
                  :source-maps true)
-           (cljs)))
+           (cljs)
+           (target)))
 
 (deftask prod-build
          []
          (comp
-           (asset-paths :asset-paths #{"html" "bower_components"})
            (sass :sass-file "main.scss"
                  :output-dir "styles"
                  :line-numbers false

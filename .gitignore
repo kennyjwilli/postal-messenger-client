@@ -9,7 +9,7 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
-bower_components
+node_modules
 *.iml
 .idea
 .envrc

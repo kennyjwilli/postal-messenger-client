@@ -19,77 +19,77 @@
 ;;====================================
 
 (defn select-conv!
-  [id state message-bus]
+  [id state]
   (let [conv (get-in state [:conversations id])]
     (when (= (:status conv) :empty)
       (m/get-conversation! (:socket_id state) (:thread_id conv))))
-  (do! message-bus (fn [s]
-                     (assoc s :selected-conversation id))))
+  (do! (fn [s]
+         (assoc s :selected-conversation id))))
 
 (defmulti handle-event (fn [evt]
                          (:type evt)))
 
 (defmethod handle-event "add-message"
-  [event _ message-bus]
+  [event _]
   (let [message (-> event :data misc/normalize-message)
         recipients (:recipients message)
         id (misc/conversation-id recipients)]
-    (do! message-bus (fn [s]
-                       (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
-                             s (assoc-in s [:conversations id :recipients] recipients)]
-                         (when (notif/has-permission?)
-                           (notif/notify (misc/format-recipients (:db s) recipients)
-                                         {:body     (misc/msg-text message)
-                                          :on-click (fn [n]
-                                                      (notif/close n)
-                                                      (.focus js/window)
-                                                      (select-conv! id s message-bus))}))
-                         (assoc-in s [:conversations id :last-update] (:date message)))))))
+    (do! (fn [s]
+           (let [s (update-in s [:conversations id :messages] #(conj (vec %) message))
+                 s (assoc-in s [:conversations id :recipients] recipients)]
+             (when (notif/has-permission?)
+               (notif/notify (misc/format-recipients (:db s) recipients)
+                             {:body     (misc/msg-text message)
+                              :on-click (fn [n]
+                                          (notif/close n)
+                                          (.focus js/window)
+                                          (select-conv! id s))}))
+             (assoc-in s [:conversations id :last-update] (:date message)))))))
 
 (defmethod handle-event "message-sent"
-  [event _ message-bus]
-  (do! message-bus (fn [s]
-                     (let [message (-> event :data misc/normalize-message)
-                           id (misc/conversation-id (:recipients message))
-                           idx (:idx message)
-                           s (update-in s [:conversations id :messages idx] (fn [msg]
-                                                                              (assoc msg :status "sent"
-                                                                                         :date (:date message))))]
-                       (assoc-in s [:conversations id :last-update] (:date message))))))
+  [event _]
+  (do! (fn [s]
+         (let [message (-> event :data misc/normalize-message)
+               id (misc/conversation-id (:recipients message))
+               idx (:idx message)
+               s (update-in s [:conversations id :messages idx] (fn [msg]
+                                                                  (assoc msg :status "sent"
+                                                                             :date (:date message))))]
+           (assoc-in s [:conversations id :last-update] (:date message))))))
 
 (defmethod handle-event "get-contacts"
-  [event db message-bus]
-  (do! message-bus (fn [s]
-                     (let [ids (d/q '[:find [?e ...] :where [?e :contact/name]] db)
-                           retract-tx (map (fn [id] [:db.fn/retractEntity id]) ids)
-                           db (d/db-with db retract-tx)]
-                       (assoc s :db (d/db-with db (misc/contacts-list->tx (:data event))))))))
+  [event db]
+  (do! (fn [s]
+         (let [ids (d/q '[:find [?e ...] :where [?e :contact/name]] db)
+               retract-tx (map (fn [id] [:db.fn/retractEntity id]) ids)
+               db (d/db-with db retract-tx)]
+           (assoc s :db (d/db-with db (misc/contacts-list->tx (:data event))))))))
 
 (defmethod handle-event "get-conversations"
-  [event _ message-bus]
-  (do! message-bus (fn [s]
-                     (let [convs (misc/conv-list->map (:data event))
-                           #_sorted #_(misc/sort-conversations convs)
-                           #_newest #_(-> sorted vec ffirst)]
-                       (assoc s :conversations convs)))))
+  [event _]
+  (do! (fn [s]
+         (let [convs (misc/conv-list->map (:data event))
+               #_sorted #_(misc/sort-conversations convs)
+               #_newest #_(-> sorted vec ffirst)]
+           (assoc s :conversations convs)))))
 
 (defmethod handle-event "get-conversation"
-  [event _ message-bus]
+  [event _]
   (let [data (:data event)]
-    (do! message-bus (fn [s]
-                       (update-in s [:conversations (misc/conversation-id (:recipients data))]
-                                  (fn [conv]
-                                    (assoc conv :messages (mapv misc/normalize-message (:messages data))
-                                                :status :complete)))))))
+    (do! (fn [s]
+           (update-in s [:conversations (misc/conversation-id (:recipients data))]
+                      (fn [conv]
+                        (assoc conv :messages (mapv misc/normalize-message (:messages data))
+                                    :status :complete)))))))
 
 (defn- event-handler
-  [event db message-bus]
+  [event db]
   (println "INCOMING" event)
   (when (= (:dest event) "client")
-    (handle-event event db message-bus)))
+    (handle-event event db)))
 
 (defn- connect-pusher
-  [channel api-key db message-bus]
+  [channel api-key db]
   (let [p (pusher/pusher api-key {:authEndpoint "/api/pusher-auth"
                                   :auth         {:headers (misc/jwt-headers)}})
         channel (pusher/channel p channel)
@@ -97,12 +97,12 @@
         #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
     (pusher/on-connected p (fn []
                              (let [socket_id (pusher/socket-id p)]
-                               (s/on-value pusher-bus #(event-handler (misc/normalize-event %) db message-bus))
+                               (s/on-value pusher-bus #(event-handler (misc/normalize-event %) db))
                                ;; TODO: Store contacts in localstorage
                                (m/get-contacts! socket_id)
                                (m/get-conversations! socket_id)
-                               (do! message-bus (fn [s]
-                                                  (assoc s :socket_id socket_id))))))))
+                               (do! (fn [s]
+                                      (assoc s :socket_id socket_id))))))))
 
 (defn selected-conv
   [state]
@@ -117,17 +117,17 @@
   (assoc-in state [:conversations (:selected-conversation state) :input-value] v))
 
 (defn send-message!
-  [message-bus state text]
+  [state text]
   (let [socket_id (:socket_id state)
         conv (selected-conv state)
         idx (-> conv :messages count)]
-    (do! message-bus (fn [s]
-                       (let [s (update-in s [:conversations (:selected-conversation state) :messages]
-                                          (fn [msgs]
-                                            (conj msgs {:type   "sent"
-                                                        :text   text
-                                                        :status "sending"})))]
-                         (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
+    (do! (fn [s]
+           (let [s (update-in s [:conversations (:selected-conversation state) :messages]
+                              (fn [msgs]
+                                (conj msgs {:type   "sent"
+                                            :text   text
+                                            :status "sending"})))]
+             (assoc-in s [:conversations (:selected-conversation state) :last-update] (t/time-now)))))
     (m/send-message! socket_id idx conv text)))
 
 ;;====================================
@@ -153,11 +153,11 @@
 
 (def init-pusher
   {:will-mount (fn [state]
-                 (let [message-bus (-> state :rum/args first)
-                       s (-> state :rum/args second)]
+                 (let [s (-> state :rum/args first)]
                    (p/then (http/get! "/api/pusher")
                            (fn [{body :body}]
-                             (connect-pusher (:message-channel body) (:api-key body) (:db s) message-bus)))
+                             (println body)
+                             (connect-pusher (:message-channel body) (:api-key body) (:db s))))
                    state))})
 
 
@@ -171,7 +171,7 @@
                                          :height "3em"}}])
 
 (rum/defcs compose-pane < (rum/local nil)
-           [s message-bus state]
+           [s state]
            (let [local (:rum/local s)
                  conv (selected-conv state)]
              [:div {:class "new-message-container"}
@@ -198,15 +198,15 @@
                                              (.stopPropagation e)
                                              (.preventDefault e)
                                              (when (not (str/blank? value))
-                                               (send-message! message-bus state value)
+                                               (send-message! state value)
                                                (aset (aget e "target") "value" "")))))}]]))
 
 (rum/defc conversation-item
-          [message-bus state id]
+          [state id]
           (let [conv (get-in state [:conversations id])]
             [:div {:class    (str "conv noselect pointer " (when (= (:selected-conversation state) id) "selected"))
                    :on-click (fn []
-                               (select-conv! id state message-bus))}
+                               (select-conv! id state))}
              #_[:div.avatar {:style {:background-image (str "url(img/walter-white.jpg)")}}]
              [:div {:class "contact-icon no-photo"}
               (let [c (misc/contact-from-number (first (:recipients conv)) (:db state))]
@@ -220,14 +220,14 @@
               [:span {:class "last-message one-line-text"} (or (-> conv :messages last misc/msg-text) (:snippet conv) "")]]]))
 
 (rum/defc conversation-list-pane
-          [message-bus state]
+          [state]
           [:div {:class "conv-list"}
            (map (fn [[id conv]]
-                  (rum/with-key (conversation-item message-bus state id) id))
+                  (rum/with-key (conversation-item state id) id))
                 (-> state :conversations misc/sort-conversations))])
 
 (rum/defc message
-          [message-bus msg idx state]
+          [msg idx state]
           (let [prev-msg (get-in state [:conversations (:selected-conversation state) :messages (dec idx)])]
             ;;TODO: Message grouping will need to be more specific when group messaging is added
             [:div {:class (str (:type msg) " message-row " (when (= (:type msg) (:type prev-msg)) "grouped"))}
@@ -243,14 +243,14 @@
                    "Sending..."))]]]))
 
 (rum/defc chat-pane < sticky-mixin
-          [message-bus state]
+          [state]
           (let [conv (selected-conv state)]
             [:div {:class "message-list-container"
                    :id    "message-list-container"}
              (if (= (:status conv) :complete)
                (let [messages (:messages conv)]
                  (map-indexed (fn [idx msg]
-                                (rum/with-key (message message-bus msg idx state) idx)) messages))
+                                (rum/with-key (message msg idx state) idx)) messages))
                [:div.layout.vertical.center-justified {:style {:height "100%"}}
                 [:div.layout.horizontal.center-justified
                  (if conv
@@ -258,13 +258,13 @@
                    [:span "Select a conversation :)"])]])]))
 
 (rum/defc messenger-pane
-          [message-bus state]
+          [state]
           [:div.layout.horizontal.fit
-           (conversation-list-pane message-bus state)
+           (conversation-list-pane state)
            [:div {:class "flex conv-messages"}
             [:div.fit
-             (chat-pane message-bus state)
-             (compose-pane message-bus state)]]])
+             (chat-pane state)
+             (compose-pane state)]]])
 
 (rum/defc loading-messenger-pane
           []
@@ -290,7 +290,7 @@
                   [:div.close {:on-click #(reset! show? false)} "X"]]]])))
 
 (rum/defcs root < init-pusher
-           [cstate message-bus state]
+           [cstate state]
            [:div.layout.vertical
             (request-permission-bar)
             [:div.nav-bar {:style {:background-color "green"}}
@@ -302,5 +302,5 @@
             [:main.flex
              [:div {:class "horz-center conv-container"}
               (if (:conversations state)
-                (messenger-pane message-bus state)
+                (messenger-pane state)
                 (loading-messenger-pane))]]])

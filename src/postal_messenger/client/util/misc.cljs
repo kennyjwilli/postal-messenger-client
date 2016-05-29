@@ -24,6 +24,10 @@
   []
   {"Authorization" (str "Token " (get-jwt))})
 
+(defn parse-json
+  [json]
+  (-> json js/JSON.parse (js->clj :keywordize-keys true)))
+
 (defn get-url
   []
   (aget js/window "location" "href"))
