@@ -91,18 +91,17 @@
 (defn- connect-pusher
   [channel api-key db]
   (let [p (pusher/pusher api-key {:authEndpoint "/api/pusher-auth"
-                                  :auth         {:headers (misc/jwt-headers)}})
+                                  :auth         {:headers (misc/jwt-headers)}
+                                  :encrypted    true})
         channel (pusher/channel p channel)
-        pusher-bus (pusher/subscribe channel "messages" {:parse-fn #(js->clj % :keywordize-keys true)})
-        #_stream #_(-> pusher-bus (s/filter #(= (:dest %) :client)))]
+        pusher-bus (pusher/subscribe channel "messages" {:parse-fn #(js->clj % :keywordize-keys true)})]
     (pusher/on-connected p (fn []
                              (let [socket_id (pusher/socket-id p)]
                                (s/on-value pusher-bus #(event-handler (misc/normalize-event %) db))
                                ;; TODO: Store contacts in localstorage
                                (m/get-contacts! socket_id)
                                (m/get-conversations! socket_id)
-                               (do! (fn [s]
-                                      (assoc s :socket_id socket_id))))))))
+                               (do! #(assoc % :socket_id socket_id)))))))
 
 (defn selected-conv
   [state]
